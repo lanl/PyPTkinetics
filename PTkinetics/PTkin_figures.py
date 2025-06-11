@@ -10,12 +10,12 @@ This submodule provides functions to generate various figures
 import shutil
 import numpy as np
 # from numba import jit
-# import matplotlib as mpl
-# mpl.use('Agg', force=False) # don't need X-window, allow running in a remote terminal session
+import matplotlib as mpl
+mpl.use('Agg', force=False) # don't need X-window, allow running in a remote terminal session
 import matplotlib.pyplot as plt
 ##### use pdflatex and specify font through preamble:
 if shutil.which('latex'):
-    # mpl.use("pgf")
+    mpl.use("pgf")
     texpreamble = "\n".join([
           r"\usepackage[utf8x]{inputenc}",
           r"\usepackage[T1]{fontenc}",

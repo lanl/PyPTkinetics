@@ -219,7 +219,7 @@ if __name__ == '__main__':
                     print(f"Warning: {onsetpressure[xi]=}, {min(pressure)=}, expect clipping for Pdot={pi:.2e}")
         
         optiondict = showoptions(OPTIONS,globaldict=globals())
-        if (maxP:=int(onsetpressure[-1]+1))<int(pressure[-1]+1):
+        if (maxP:=int(onsetpressure[-1]+1))<int(pressure[-1]+1) and OPTIONS is not False:
             optiondict |= {'# recommended maxP:\n#maxP':maxP}
         writeresults(extendednamestring, pdotvals, pressure, onsetpressure, timeP, res, resplus, resmin, tau, tauplus, taumin, optiondict)
     
