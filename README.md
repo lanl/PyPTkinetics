@@ -1,6 +1,7 @@
 # PyPTkinetics
 
-O# (O4940)
+O# (O4940)</br>
+doi: [10.11578/dc.20250822.5](https://doi.org/10.11578/dc.20250822.5)</br>
 
 This basic research code computes the time-dependent phase transition between two solid crystalline phases under dynamic conditions using a microstructure-aware model described in https://www.arxiv.org/abs/2504.00250 (LA-UR-24-32576) as well as effective phenomenological models which can capture the main features of the microscopic model. Analytic equations of state are included for metals such as alpha / epsilon iron and beta / gamma tin. Results, such a volume fraction of the new phase as a function of pressure, are visualized using matplotlib.
  
