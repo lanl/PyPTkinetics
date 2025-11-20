@@ -111,7 +111,7 @@ def plot_relaxtime(tau,taumin,tauplus,pdotvals,figtitle,extendednamestring="",fi
     relaxfig.get_figure().savefig(f'relaxationtimeRamp{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
     plt.close()
     
-def plot_onsetP(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),linearfit=None,nonlinfit=None,ylimits=None):
+def plot_onsetP(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),linearfit=None,nonlinfit=None,ylimits=None,expdata=None):
     '''plot the onset pressure as a function of strain rate'''
     # approximate pressure at phase transition as fct of loading strain rate P-dot
     Ponset = np.array(Ponset)
@@ -147,6 +147,8 @@ def plot_onsetP(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5)
         ramppressure = pd.DataFrame(np.array(ramppressure).T,logpdotvals)
     ramppressure.index.name=r'$\log_{10}\dot{P}/P$ [1/s]'
     ramppressurefig = ramppressure.plot(title=figtitle,ylabel=r'P [GPa]',style=styles,legend=None,ylim=ylimits,figsize=figsize,fontsize=fntsize)
+    if expdata is not None:
+        plt.plot(expdata[:,0],expdata[:,1],'r.')
     ramppressurefig.xaxis.set_minor_locator(AutoMinorLocator())
     ramppressurefig.yaxis.set_minor_locator(AutoMinorLocator())
     ramppressurefig.get_figure().savefig(f'RampPressure{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
