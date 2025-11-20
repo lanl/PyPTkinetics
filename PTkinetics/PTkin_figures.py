@@ -2,19 +2,21 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Nov. 13, 2024
+last modified: Nov. 19, 2025
 @author: Daniel N. Blaschke
 
 This submodule provides functions to generate various figures
 """
+import sys
 import shutil
 import numpy as np
 # from numba import jit
 import matplotlib as mpl
-mpl.use('Agg', force=False) # don't need X-window, allow running in a remote terminal session
+if 'ipykernel' not in sys.modules:
+    mpl.use('Agg', force=False) # don't need X-window, allow running in a remote terminal session
 import matplotlib.pyplot as plt
 ##### use pdflatex and specify font through preamble:
-if shutil.which('latex'):
+if shutil.which('latex') and 'ipykernel' not in sys.modules:
     mpl.use("pgf")
     texpreamble = "\n".join([
           r"\usepackage[utf8x]{inputenc}",
