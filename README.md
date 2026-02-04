@@ -3,7 +3,7 @@
 O# (O4940)</br>
 doi: [10.11578/dc.20250822.5](https://doi.org/10.11578/dc.20250822.5)</br>
 
-This basic research code computes the time-dependent phase transition between two solid crystalline phases under dynamic conditions using a microstructure-aware model described in https://www.arxiv.org/abs/2504.00250 (LA-UR-24-32576) as well as effective phenomenological models which can capture the main features of the microscopic model. Analytic equations of state are included for metals such as alpha / epsilon iron and beta / gamma tin. Results, such a volume fraction of the new phase as a function of pressure, are visualized using matplotlib.
+This basic research code computes the time-dependent phase transition between two solid crystalline phases under dynamic conditions using a microstructure-aware model described in [Int. J. Plast. 196 (2020) 104579](https://doi.org/10.1016/j.ijplas.2025.104579) ([arxiv.org/abs/2504.00250](https://arxiv.org/abs/2504.00250)) as well as effective phenomenological models which can capture the main features of the microscopic model. Analytic equations of state are included for metals such as alpha / epsilon iron and beta / gamma tin. Results, such a volume fraction of the new phase as a function of pressure, are visualized using matplotlib.
  
  © 2025. Triad National Security, LLC. All rights reserved.
 
@@ -21,10 +21,7 @@ This program was produced under U.S. Government contract 89233218CNA000001 for L
 * [scipy](https://docs.scipy.org/doc/scipy/reference/) >=1.9,</br>
 * [matplotlib](https://matplotlib.org/) >=3.3</br>
 * [pandas](https://pandas.pydata.org/) >=1.3 (and Jinja2)</br>
-
-
-### Optional but recommended:
-* [PyDislocDyn](https://github.com/dblaschke-LANL/PyDislocDyn) and its dependencies
+* [PyDislocDyn](https://github.com/dblaschke-LANL/PyDislocDyn) and its dependencies in order to pass commandline options and run the examples in the jupyter notebook 
 
 ## License
 
