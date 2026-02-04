@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Nov. 19, 2025
+last modified: Feb. 4, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to generate various figures
@@ -43,7 +43,8 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 import pandas as pd
 
-def plot_Vfrac_P_Pdot(Vf,P,pdotvals,figtitle,ylabel,extendednamestring="",figsize=(6.5,4),xlimits=None,every=1,legendopts={'loc':'upper left','bbox_to_anchor':(1.01,1), 'handlelength':1.2}):
+def plot_Vfrac_P_Pdot(Vf,P,pdotvals,figtitle,ylabel,extendednamestring="",figsize=(6.5,4),xlimits=None,every=1,\
+                      legendopts={'loc':'upper left','bbox_to_anchor':(1.01,1), 'handlelength':1.2}, showfig=False):
     '''plot the volume fraction of the 2nd phase as a function of pressure for various pressure rates'''
     ramp = pd.DataFrame(Vf,P).iloc[:,::every]
     pdotvals = np.asarray(pdotvals[::every])
@@ -53,7 +54,12 @@ def plot_Vfrac_P_Pdot(Vf,P,pdotvals,figtitle,ylabel,extendednamestring="",figsiz
         ramp.columns = pd.Index([rf'{pi:.0e} GPa/$\mu$s' for pi in pdotvals])
     ramp.index.name='P [GPa]'
     findx0 = ramp.iloc[:,0]
-    findx0 = findx0[findx0<1e-4].index[-1]
+    if len(findx0[findx0<1e-4])>0:
+        findx0 = findx0[findx0<1e-4].index[-1]
+    elif len(findx0[findx0<1e-3])>0:
+        findx0 = findx0[findx0<1e-3].index[-1]
+    else:
+        findx0 = findx0[findx0<1e-1].index[0]
     for xi in range(len(pdotvals)):
         finx0 = ramp.iloc[:,xi]
         finx0 = finx0[finx0<1e-4]
@@ -95,9 +101,11 @@ def plot_Vfrac_P_Pdot(Vf,P,pdotvals,figtitle,ylabel,extendednamestring="",figsiz
     rampfig.xaxis.set_minor_locator(AutoMinorLocator())
     rampfig.yaxis.set_minor_locator(AutoMinorLocator())
     rampfig.get_figure().savefig(f'PTkineticsRamp{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
+    if showfig:
+        plt.show()
     plt.close()
     
-def plot_relaxtime(tau,taumin,tauplus,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5)):
+def plot_relaxtime(tau,taumin,tauplus,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),showfig=False):
     '''plot the relaxation time'''
     logpdotvals = np.log10(np.abs(pdotvals))
     logtau0 = np.log10([1e3*np.abs(tau[pi]) for pi in pdotvals]) # convert mu-sec to ns and take log10
@@ -109,9 +117,11 @@ def plot_relaxtime(tau,taumin,tauplus,pdotvals,figtitle,extendednamestring="",fi
     relaxfig.xaxis.set_minor_locator(AutoMinorLocator())
     relaxfig.yaxis.set_minor_locator(AutoMinorLocator())
     relaxfig.get_figure().savefig(f'relaxationtimeRamp{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
+    if showfig:
+        plt.show()
     plt.close()
     
-def plot_onsetP(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),linearfit=None,nonlinfit=None,ylimits=None,expdata=None):
+def plot_onsetP(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),linearfit=None,nonlinfit=None,ylimits=None,expdata=None,showfig=False):
     '''plot the onset pressure as a function of strain rate'''
     # approximate pressure at phase transition as fct of loading strain rate P-dot
     Ponset = np.array(Ponset)
@@ -152,9 +162,11 @@ def plot_onsetP(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5)
     ramppressurefig.xaxis.set_minor_locator(AutoMinorLocator())
     ramppressurefig.yaxis.set_minor_locator(AutoMinorLocator())
     ramppressurefig.get_figure().savefig(f'RampPressure{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
+    if showfig:
+        plt.show()
     plt.close()
     
-def plot_onsetP2(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),ylimits=None,styles = '.b',logscale=False,Ptrans=None):
+def plot_onsetP2(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5),ylimits=None,styles = '.b',logscale=False,Ptrans=None,showfig=False):
     '''plot the onset pressure as a function of pressure rate'''
     Ponset = np.array(Ponset)
     if ylimits is None:
@@ -173,9 +185,11 @@ def plot_onsetP2(Ponset,pdotvals,figtitle,extendednamestring="",figsize=(4.5,3.5
     ramppressurefig.xaxis.set_minor_locator(AutoMinorLocator())
     ramppressurefig.yaxis.set_minor_locator(AutoMinorLocator())
     ramppressurefig.get_figure().savefig(f'OnsetPressure{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
+    if showfig:
+        plt.show()
     plt.close()
     
-def plot_Vfrac_time_Pdot(Vf,timeP,Ponset,figtitle,ylabel,extendednamestring="",figsize=(6.5,4),slices=None,convertpressurerate=True):
+def plot_Vfrac_time_Pdot(Vf,timeP,Ponset,figtitle,ylabel,extendednamestring="",figsize=(6.5,4),slices=None,convertpressurerate=True,showfig=False):
     '''plot the volume fraction of the second phase as a function of time'''
     if np.all(np.abs(timeP)<1e-2):
         timeP = timeP*1e9
@@ -205,4 +219,6 @@ def plot_Vfrac_time_Pdot(Vf,timeP,Ponset,figtitle,ylabel,extendednamestring="",f
     ironrampfig2.xaxis.set_minor_locator(AutoMinorLocator())
     ironrampfig2.yaxis.set_minor_locator(AutoMinorLocator())
     ironrampfig2.get_figure().savefig(f'PTkineticsRamp_time{extendednamestring}.pdf',format='pdf',bbox_inches='tight')
+    if showfig:
+        plt.show()
     plt.close()
