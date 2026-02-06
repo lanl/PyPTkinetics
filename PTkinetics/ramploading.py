@@ -29,7 +29,7 @@ if Ncpus>1:
 else:
     print("Warning: Parallelization is disabled because 'joblib' is not installed")
 
-implemented = ['Fe', 'Sn']
+implemented = ['Fe']
 parser = argparse.ArgumentParser(usage=f"\n{sys.argv[0]} <options> <material>"
                                  +f"\ncurrently implemented metals: {implemented}",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -105,12 +105,12 @@ if __name__ == '__main__':
         figtitle = r'$\alpha$(bcc)$\to\epsilon$(hcp) transition in Fe'
         figtitle_inv = r'$\alpha$(bcc)$\to\epsilon$(hcp)$\to\alpha$(bcc) transition in Fe'
         ylabel = r'$\epsilon$-Fe volume fraction'
-    elif metal == 'Sn':
-        from PTkinetics.eos.tin import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
-        extendednamestring = "Tin"
-        figtitle = r'$\beta\to\gamma$ transition in Sn'
-        figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
-        ylabel = r'$\gamma$-Sn volume fraction'
+    # elif metal == 'Sn':
+    #     from PTkinetics.eos.tin import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
+    #     extendednamestring = "Tin"
+    #     figtitle = r'$\beta\to\gamma$ transition in Sn'
+    #     figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
+    #     ylabel = r'$\gamma$-Sn volume fraction'
     else:
         raise ValueError(f"not implemented for {metal=}; \nplease choose one of: {implemented}")
     ## load default model parameters of new PT kinetics model:
