@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed May  8 12:32:12 2024
-last modified: Nov. 11, 2024
+last modified: Feb. 4, 2026
 @author: dblaschke
 
 This submodule provides various utility functions such as write/read calculation results and loading 3rd party modules if available.
@@ -43,7 +43,7 @@ try:
     OPTIONS = {'include_hom':str2bool, 'include_disloc':str2bool, 'include_grains':str2bool, 'graindiameter':float, 'grainthickness':float,
                'include_gb':str2bool, 'include_ge':str2bool, 'include_gc':str2bool, 'maxP':float, 'gammaAM':float, 'gammaAA':float, 'rhodis':float,
                'DeltaP':float, 'kappa':float, 'beta':float, 'resolution':int, 'verbose':str2bool, 'Npdot':int, 'Ncores':int, 'skip_calcs':str2bool,
-               'cmax':float,'include_inverse':str2bool}
+               'cmax':float,'include_inverse':str2bool,'model':str,'kjma':str2bool,'B':float,'W':float, 'showfigs':str2bool}
 except ImportError:
     OPTIONS = False
     def isclose(f1,f2):

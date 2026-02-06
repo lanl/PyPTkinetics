@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Aug. 23, 2024
+last modified: May 23, 2025
 @author: Daniel N. Blaschke
 """
 import sys
@@ -53,3 +53,7 @@ burgers = {'Fe':a_lat['Fe']*np.sqrt(3)/2, 'Sn':c_lat['Sn']} ## burgers vector le
 graindiameter = {'Fe':1e-2, 'Sn':1e-2} ## average grain diameter D in cm, number suggested in Cahn 1956
 grainthickness = {'Fe':1e-8, 'Sn':1e-8} ## average grain boundary thickness delta  in cm, number suggested in Cahn 1956
 
+
+# TODO: generalize so that we have two sets of B,W for forward and backward trafo (could accept tuples in volfrac code)
+greeffB = {'Fe':5e2,'Sn':5e2}
+greeffW = {'Fe':5e-2,'Sn':5e-2}
