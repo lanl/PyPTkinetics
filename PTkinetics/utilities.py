@@ -10,7 +10,6 @@ This submodule provides various utility functions such as write/read calculation
 import sys
 import os
 import multiprocessing
-import argparse
 import numpy as np
 import pandas as pd
 
