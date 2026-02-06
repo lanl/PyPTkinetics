@@ -2,11 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Feb. 5, 2026
+last modified: Feb. 6, 2026
 @author: Daniel N. Blaschke
+
+This script applies the phase transformation kinetics models implemented in this package
+to ramp loading examples.
 """
 import sys
 import os
+import argparse
 import numpy as np
 
 dir_path = os.path.realpath(os.path.join(os.path.dirname(__file__),os.pardir))
@@ -17,61 +21,83 @@ from PTkinetics import data
 from PTkinetics.volumefraction import compute_prefactors, relaxtime, t_of_P_ramp, figrain, sigrain, lambdaE_hd, lambdaE_grain,\
     lambdaE_Greeff
 from PTkinetics.PTkin_figures import plot_Vfrac_P_Pdot, plot_relaxtime, plot_onsetP, plot_onsetP2 #, plot_Vfrac_time_Pdot
-from PTkinetics.utilities import Ncores, Ncpus, nonumba, OPTIONS, writeresults, readresults, stripoptions, showoptions#, rampR
+from PTkinetics.utilities import Ncores, Ncpus, nonumba, writeresults, readresults, str2bool, convert_arg_line_to_args#, rampR
 if nonumba:
     print("Warning: calculations will be slower because just-in-time compiler 'numba' is not installed")
 if Ncpus>1:
     from PTkinetics.utilities import Parallel, delayed
 else:
     print("Warning: Parallelization is disabled because 'joblib' is not installed")
-if OPTIONS is not False:
-    from PTkinetics.utilities import parse_options
 
-include_hom = False # not the driving mechanism (does not match experiments if active)
-include_disloc = True
-include_grains = True
-include_gb = True ## nucleation on grain boundaries
-include_ge = False ## nucleation on grain edges (quite slow)
-include_gc = False ## nucleation on grain corners (subleading)
+implemented = ['Fe', 'Sn']
+parser = argparse.ArgumentParser(usage=f"\n{sys.argv[0]} <options> <material>"
+                                 +f"\ncurrently implemented metals: {implemented}",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                 fromfile_prefix_chars='@')
+parser.convert_arg_line_to_args = convert_arg_line_to_args
+parser.add_argument('material', type=str, help='material we are caluclating for')
+parser.add_argument('-include_hom','--include_hom',type=str2bool,default=False,help='homogeneous nucleation is not the driving mechanism (does not match experiments if active)')
+parser.add_argument('-include_disloc','--include_disloc',type=str2bool,default=True,help='nucleation on dislocations')
+parser.add_argument('-include_grains','--include_grains',type=str2bool,default=True,help='nucleation on grains')
+parser.add_argument('-graindiameter','--graindiameter',type=float,default=None,help='average grain diameter D in cm, defaults to reading from submodule "data" for the chosen material')
+parser.add_argument('-grainthickness','--grainthickness',type=float,default=None,help='average grain boundary thickness delta in cm, defaults to reading from submodule "data" for the chosen material')
+parser.add_argument('-include_gb','--include_gb',type=str2bool,default=True,help="nucleation on grain boundaries")
+parser.add_argument('-include_ge','--include_ge',type=str2bool,default=False,help="nucleation on grain edges (quite slow)")
+parser.add_argument('-include_gc','--include_gc',type=str2bool,default=False,help="nucleation on grain corners (subleading)")
+parser.add_argument('-maxP','--maxP',type=float,default=0,help='overrides the maximum pressure to probe if this is >0')
+parser.add_argument('-gammaAM','--gammaAM',type=float,default=None,help='average interfacial energy in mJ/m^2 between grains of different phases')
+parser.add_argument('-gammaAA','--gammaAA',type=float,default=None,help='average interfacial energy in mJ/m^2 between grains of the same (initial) phase')
+parser.add_argument('-rhodis','--rhodis',type=float,default=None,help='dislocation density in 1/m^2')
+parser.add_argument('-DeltaP','--DeltaP',type=float,default=None,help='difference in pressure between the coexistyence curve and the spinodal in GPa')
+parser.add_argument('-kappa','--kappa',type=float,default=None,help='model parameter in m^3 / Js')
+parser.add_argument('-beta','--beta',type=float,default=None,help='model parameter in J/m')
+parser.add_argument('-resolution','--resolution',type=int,default=10000,help='resolution in pressure used for the calculations')
+parser.add_argument('-v','--verbose',action='store_true')
+parser.add_argument('-Npdot','--Npdot',type=int,default=16,help='choose between: 4, 6, 7, 8, 10, 16, 18 to select one of the pre-defined lists of pressure rates to consider')
+parser.add_argument('-Ncores','--Ncores',type=int,default=Ncores,help='override number of threads to use for parallelization')
+parser.add_argument('-skip_calcs','--skip_calcs',action='store_true',help='attempt to read from the cwd on disk previously calculated results to plot')
+parser.add_argument('-cmax','--cmax',type=float,default=np.inf,help='maximum interface speed; choose "None" to set to transverse sound speed of chosen material')
+parser.add_argument('-include_inverse','--include_inverse',type=str2bool,default=True,help="include also the inverse phase transformation")
+parser.add_argument('-model','--model',type=str,default='micro',help="choose between 'micro' and 'greeff'")
+parser.add_argument('-kjma','--kjma',type=str,default='auto',help="for debugging only; implied by model")
+parser.add_argument('-B','--B',type=float,default=None,help='model parameter')
+parser.add_argument('-W','--W',type=float,default=None,help='model parameter')
+parser.add_argument('-showfigs','--showfigs',type=str2bool,default=False,help='show the generated figures in addition to saving them (useful when running in jupyter)')
 
-include_inverse = True
-showfigs = False
-
-model = 'micro' # choose between 'micro' (microstructure dependent) and 'greeff' (C. Greeff's model)
-kjma = 'auto'
-
-skip_calcs = False # if True, we will attempt to read from the cwd on disk previously calculated results to plot
-verbose = False
-Npdot = 16
-
-implemented = ['Fe']
-resolution = 10000 ## in pressure
-maxP = 0 ## overrides the maximum pressure to probe if this is >0 (set via --maxP option on the commandline)
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        args = stripoptions(sys.argv[1:])
-        if OPTIONS is False and len(sys.argv)-len(args)>1:
-            print("Error: module PyDislocDyn (1.3.0 or higher) not found, but required for setting options")
-            sys.exit()
-        elif '--help' in sys.argv:
-            print(f"\nUsage: {sys.argv[0]} <options> <metal>\n\navailable options:")
-            for key, OPTk in OPTIONS.items():
-                print(f'--{key}={OPTk.__name__}')
-            print("\ncurrently implemented metals:")
-            for it in implemented:
-                print(it)
-            sys.exit()
-        if len(args) == 1:
-            metal = args[0]
-            if metal not in implemented:
-                raise ValueError(f"not implemented for {metal=}; \nplease choose one of: {implemented}")
-            print(f"Calculating for {metal=} ...")
-        elif len(args) == 0:
-            raise ValueError("missing one required argument: which material are we caluclating for?")
-        else:
-            raise ValueError(f"too many commandline arguments: {args=}; need one and only one to determine which material to compute for")
-    else:
-        raise ValueError("missing one required argument: which material are we caluclating for?")
+    ## set option values (using defaults if not set by the user)
+    options = parser.parse_args()
+
+    include_hom = options.include_hom
+    include_disloc = options.include_disloc
+    include_grains = options.include_grains
+    include_gb = options.include_gb
+    include_ge = options.include_ge
+    include_gc = options.include_gc
+    include_inverse = options.include_inverse
+    showfigs = options.showfigs
+    model = options.model
+    kjma = options.kjma
+    skip_calcs = options.skip_calcs
+    verbose = options.verbose
+    Npdot = options.Npdot
+    Ncores = options.Ncores
+    resolution = options.resolution
+    maxP = options.maxP
+    cmax = options.cmax
+    # options that default to 'None' (meaning they are to be read from data.py, but user may override)
+    graindiameter = options.graindiameter
+    grainthickness = options.grainthickness
+    gammaAM = options.gammaAM
+    gammaAA = options.gammaAA
+    rhodis = options.rhodis
+    DeltaP = options.DeltaP
+    kappa = options.kappa
+    beta = options.beta
+    B = options.B
+    W = options.W
+
+    metal = options.material
 
     if metal == 'Fe':
         from PTkinetics.eos.iron import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
@@ -85,30 +111,35 @@ if __name__ == '__main__':
         figtitle = r'$\beta\to\gamma$ transition in Sn'
         figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
         ylabel = r'$\gamma$-Sn volume fraction'
+    else:
+        raise ValueError(f"not implemented for {metal=}; \nplease choose one of: {implemented}")
     ## load default model parameters of new PT kinetics model:
     atommass = data.atommass[metal]
-    graindiameter = data.graindiameter[metal]
-    grainthickness = data.grainthickness[metal]
-    kappa = data.kappa[metal]
-    beta = data.beta[metal]
+    if graindiameter is None:
+        graindiameter = data.graindiameter[metal]
+    if grainthickness is None:
+        grainthickness = data.grainthickness[metal]
+    if kappa is None:
+        kappa = data.kappa[metal]
+    if beta is None:
+        beta = data.beta[metal]
     # Ptransition = data.Ptransition[metal] ## use value calculated from eos below instead
-    DeltaP = data.DeltaP[metal]
-    gammaAM = data.gammaAM[metal]
-    gammaAA = data.gammaAA[metal]
-    cmax = np.inf #data.ct[metal]
-    rhodis = data.rhodis[metal]
+    if DeltaP is None:
+        DeltaP = data.DeltaP[metal]
+    if gammaAM is None:
+        gammaAM = data.gammaAM[metal]
+    if gammaAA is None:
+        gammaAA = data.gammaAA[metal]
+    if cmax is None:
+        cmax = data.ct[metal]
+    if rhodis is None:
+        rhodis = data.rhodis[metal]
     burgers = data.burgers[metal]
     shear = data.shear[metal]/1e9 ## convert to GPa
     poisson = data.poisson[metal]
-    B=None
-    W=None
-    
-    if len(sys.argv)-len(args)>1:
-        args, kwargs = parse_options(sys.argv[1:],OPTIONS,globals())
-        if len(kwargs) > 0:
-            raise ValueError(f"the following commandline options are unknown: {kwargs}")
-        if model not in (mdls:=['micro','greeff']):
-            raise ValueError(f"unknown / not implemented {model=}, must be one of {mdls}")
+
+    if model not in (mdls:=['micro','greeff']):
+        raise ValueError(f"unknown / not implemented {model=}, must be one of {mdls}")
     if Ncpus == 1 and Ncores > 1:
         raise ValueError(f"{Ncores=} requested by user, but parallelization is unvailable; please install joblib")
 
@@ -264,8 +295,8 @@ if __name__ == '__main__':
                     onsetpressure[xi] = np.min(pressure)
                     print(f"Warning: {onsetpressure[xi]=}, {min(pressure)=}, expect clipping for Pdot={pi:.2e}")
         
-        optiondict = showoptions(OPTIONS,globaldict=globals())
-        if (maxP:=int(onsetpressure[-1]+1))<int(pressure[-1]+1) and OPTIONS is not False:
+        optiondict = vars(options)
+        if (maxP:=int(onsetpressure[-1]+1))<int(pressure[-1]+1):
             optiondict |= {'# recommended maxP:\n#maxP':maxP}
         writeresults(extendednamestring, pdotvals, pressure, onsetpressure, timeP, res, resplus, resmin, tau, tauplus, taumin, optiondict)
     
