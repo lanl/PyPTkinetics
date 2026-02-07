@@ -21,7 +21,6 @@ This program was produced under U.S. Government contract 89233218CNA000001 for L
 * [scipy](https://docs.scipy.org/doc/scipy/reference/) >=1.9,</br>
 * [matplotlib](https://matplotlib.org/) >=3.3</br>
 * [pandas](https://pandas.pydata.org/) >=1.3 (and Jinja2)</br>
-* [PyDislocDyn](https://github.com/dblaschke-LANL/PyDislocDyn) and its dependencies in order to pass commandline options and run the examples in the jupyter notebook 
 
 ## License
 

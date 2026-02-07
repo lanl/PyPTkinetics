@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: May 23, 2025
+last modified: Feb. 6, 2026
 @author: Daniel N. Blaschke
 """
 import sys
@@ -13,20 +13,11 @@ dir_path = os.path.realpath(os.path.join(os.path.dirname(__file__),os.pardir))
 if dir_path not in sys.path:
     sys.path.append(dir_path)
 
-try:
-    from pydislocdyn.metal_data import ISO_c44 as shear
-    from pydislocdyn.metal_data import ISO_poisson as poisson
-    from pydislocdyn.metal_data import CRC_rho as density
-    from pydislocdyn.metal_data import CRC_a as a_lat
-    from pydislocdyn.metal_data import CRC_c as c_lat
-    from pydislocdyn.metal_data import CRC_T_m as Tm
-except ImportError:
-    shear = {'Fe':81.6e9, 'Sn':18.4e9}
-    poisson = {'Fe':0.293, 'Sn':0.357}
-    density = {'Fe':7870, 'Sn':7287}
-    a_lat = {'Fe':2.8665e-10, 'Sn':5.8318e-10}
-    c_lat = {'Sn':3.1818e-10}
-    Tm = {}
+shear = {'Fe':81.6e9, 'Sn':18.4e9}
+poisson = {'Fe':0.293, 'Sn':0.357}
+density = {'Fe':7870, 'Sn':7287}
+a_lat = {'Fe':2.8665e-10, 'Sn':5.8318e-10}
+c_lat = {'Sn':3.1818e-10}
 
 ## atomic weights taken from the CRC handbook
 atommass = {'Al':26.9815386, 'Cu':63.546, 'Fe':55.845, 'Nb':92.90637, 'Au':196.96657, 'Ni':58.693, 'Mo':95.96, 'Ag':107.868,

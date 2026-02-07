@@ -2,11 +2,15 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Feb. 5, 2026
+last modified: Feb. 6, 2026
 @author: Daniel N. Blaschke
+
+This script applies the phase transformation kinetics models implemented in this package
+to ramp loading examples.
 """
 import sys
 import os
+import argparse
 import numpy as np
 
 dir_path = os.path.realpath(os.path.join(os.path.dirname(__file__),os.pardir))
@@ -17,126 +21,123 @@ from PTkinetics import data
 from PTkinetics.volumefraction import compute_prefactors, relaxtime, t_of_P_ramp, figrain, sigrain, lambdaE_hd, lambdaE_grain,\
     lambdaE_Greeff
 from PTkinetics.PTkin_figures import plot_Vfrac_P_Pdot, plot_relaxtime, plot_onsetP, plot_onsetP2 #, plot_Vfrac_time_Pdot
-from PTkinetics.utilities import Ncores, Ncpus, nonumba, OPTIONS, writeresults, readresults, stripoptions, showoptions#, rampR
+from PTkinetics.utilities import Ncores, Ncpus, nonumba, writeresults, readresults, str2bool, convert_arg_line_to_args#, rampR
 if nonumba:
     print("Warning: calculations will be slower because just-in-time compiler 'numba' is not installed")
 if Ncpus>1:
     from PTkinetics.utilities import Parallel, delayed
 else:
     print("Warning: Parallelization is disabled because 'joblib' is not installed")
-if OPTIONS is not False:
-    from PTkinetics.utilities import parse_options
-
-include_hom = False # not the driving mechanism (does not match experiments if active)
-include_disloc = True
-include_grains = True
-include_gb = True ## nucleation on grain boundaries
-include_ge = False ## nucleation on grain edges (quite slow)
-include_gc = False ## nucleation on grain corners (subleading)
-
-include_inverse = True
-showfigs = False
-
-model = 'micro' # choose between 'micro' (microstructure dependent) and 'greeff' (C. Greeff's model)
-kjma = 'auto'
-
-skip_calcs = False # if True, we will attempt to read from the cwd on disk previously calculated results to plot
-verbose = False
-Npdot = 16
 
 implemented = ['Fe']
-resolution = 10000 ## in pressure
-maxP = 0 ## overrides the maximum pressure to probe if this is >0 (set via --maxP option on the commandline)
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        args = stripoptions(sys.argv[1:])
-        if OPTIONS is False and len(sys.argv)-len(args)>1:
-            print("Error: module PyDislocDyn (1.3.0 or higher) not found, but required for setting options")
-            sys.exit()
-        elif '--help' in sys.argv:
-            print(f"\nUsage: {sys.argv[0]} <options> <metal>\n\navailable options:")
-            for key, OPTk in OPTIONS.items():
-                print(f'--{key}={OPTk.__name__}')
-            print("\ncurrently implemented metals:")
-            for it in implemented:
-                print(it)
-            sys.exit()
-        if len(args) == 1:
-            metal = args[0]
-            if metal not in implemented:
-                raise ValueError(f"not implemented for {metal=}; \nplease choose one of: {implemented}")
-            print(f"Calculating for {metal=} ...")
-        elif len(args) == 0:
-            raise ValueError("missing one required argument: which material are we caluclating for?")
-        else:
-            raise ValueError(f"too many commandline arguments: {args=}; need one and only one to determine which material to compute for")
-    else:
-        raise ValueError("missing one required argument: which material are we caluclating for?")
+parser = argparse.ArgumentParser(usage=f"\n{sys.argv[0]} <options> <material>",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                 fromfile_prefix_chars='@')
+parser.convert_arg_line_to_args = convert_arg_line_to_args
+parser.add_argument('material', type=str, help=f'material we are caluclating for; choose between {implemented}')
+parser.add_argument('-include_hom','--include_hom',type=str2bool,default=False,help='homogeneous nucleation is not the driving mechanism (does not match experiments if active)')
+parser.add_argument('-include_disloc','--include_disloc',type=str2bool,default=True,help='nucleation on dislocations')
+parser.add_argument('-include_grains','--include_grains',type=str2bool,default=True,help='nucleation on grains')
+parser.add_argument('-graindiameter','--graindiameter',type=float,default=None,help='average grain diameter D in cm, defaults to reading from submodule "data" for the chosen material')
+parser.add_argument('-grainthickness','--grainthickness',type=float,default=None,help='average grain boundary thickness delta in cm, defaults to reading from submodule "data" for the chosen material')
+parser.add_argument('-include_gb','--include_gb',type=str2bool,default=True,help="nucleation on grain boundaries")
+parser.add_argument('-include_ge','--include_ge',type=str2bool,default=False,help="nucleation on grain edges (quite slow)")
+parser.add_argument('-include_gc','--include_gc',type=str2bool,default=False,help="nucleation on grain corners (subleading)")
+parser.add_argument('-maxP','--maxP',type=float,default=0,help='overrides the maximum pressure to probe if this is >0')
+parser.add_argument('-gammaAM','--gammaAM',type=float,default=None,help='average interfacial energy in mJ/m^2 between grains of different phases')
+parser.add_argument('-gammaAA','--gammaAA',type=float,default=None,help='average interfacial energy in mJ/m^2 between grains of the same (initial) phase')
+parser.add_argument('-rhodis','--rhodis',type=float,default=None,help='dislocation density in 1/m^2')
+parser.add_argument('-DeltaP','--DeltaP',type=float,default=None,help='difference in pressure between the coexistyence curve and the spinodal in GPa')
+parser.add_argument('-kappa','--kappa',type=float,default=None,help='model parameter in m^3 / Js')
+parser.add_argument('-beta','--beta',type=float,default=None,help='model parameter in J/m')
+parser.add_argument('-resolution','--resolution',type=int,default=10000,help='resolution in pressure used for the calculations')
+parser.add_argument('-v','--verbose',action='store_true')
+parser.add_argument('-Npdot','--Npdot',type=int,default=16,help='choose between: 4, 6, 7, 8, 10, 16, 18 to select one of the pre-defined lists of pressure rates to consider')
+parser.add_argument('-Ncores','--Ncores',type=int,default=Ncores,help='override number of threads to use for parallelization')
+parser.add_argument('-skip_calcs','--skip_calcs',action='store_true',help='attempt to read from the cwd on disk previously calculated results to plot')
+parser.add_argument('-cmax','--cmax',type=float,default=np.inf,help='maximum interface speed; will be set to the transverse sound speed of chosen material if the user sets a negative value')
+parser.add_argument('-include_inverse','--include_inverse',type=str2bool,default=True,help="include also the inverse phase transformation")
+parser.add_argument('-model','--model',type=str,default='micro',help="choose between 'micro' and 'greeff'")
+parser.add_argument('-kjma','--kjma',type=str,default='auto',help="for debugging only; implied by model")
+parser.add_argument('-B','--B',type=float,default=None,help='model parameter')
+parser.add_argument('-W','--W',type=float,default=None,help='model parameter')
+parser.add_argument('-showfigs','--showfigs',type=str2bool,default=False,help='show the generated figures in addition to saving them (useful when running in jupyter)')
 
+if __name__ == '__main__':
+    opts = parser.parse_args()
+    metal = opts.material
     if metal == 'Fe':
         from PTkinetics.eos.iron import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
         extendednamestring = "Iron"
         figtitle = r'$\alpha$(bcc)$\to\epsilon$(hcp) transition in Fe'
         figtitle_inv = r'$\alpha$(bcc)$\to\epsilon$(hcp)$\to\alpha$(bcc) transition in Fe'
         ylabel = r'$\epsilon$-Fe volume fraction'
-    elif metal == 'Sn':
-        from PTkinetics.eos.tin import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
-        extendednamestring = "Tin"
-        figtitle = r'$\beta\to\gamma$ transition in Sn'
-        figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
-        ylabel = r'$\gamma$-Sn volume fraction'
+    # elif metal == 'Sn':
+    #     from PTkinetics.eos.tin import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
+    #     extendednamestring = "Tin"
+    #     figtitle = r'$\beta\to\gamma$ transition in Sn'
+    #     figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
+    #     ylabel = r'$\gamma$-Sn volume fraction'
+    else:
+        raise ValueError(f"not implemented for {metal=}; \nplease choose one of: {implemented}")
     ## load default model parameters of new PT kinetics model:
     atommass = data.atommass[metal]
-    graindiameter = data.graindiameter[metal]
-    grainthickness = data.grainthickness[metal]
-    kappa = data.kappa[metal]
-    beta = data.beta[metal]
+    if opts.graindiameter is None:
+        opts.graindiameter = data.graindiameter[metal]
+    if opts.grainthickness is None:
+        opts.grainthickness = data.grainthickness[metal]
+    if opts.kappa is None:
+        opts.kappa = data.kappa[metal]
+    if opts.beta is None:
+        opts.beta = data.beta[metal]
     # Ptransition = data.Ptransition[metal] ## use value calculated from eos below instead
-    DeltaP = data.DeltaP[metal]
-    gammaAM = data.gammaAM[metal]
-    gammaAA = data.gammaAA[metal]
-    cmax = np.inf #data.ct[metal]
-    rhodis = data.rhodis[metal]
+    if opts.DeltaP is None:
+        opts.DeltaP = data.DeltaP[metal]
+    if opts.gammaAM is None:
+        opts.gammaAM = data.gammaAM[metal]
+    if opts.gammaAA is None:
+        opts.gammaAA = data.gammaAA[metal]
+    if opts.cmax < 0:
+        opts.cmax = data.ct[metal]
+    if opts.rhodis is None:
+        opts.rhodis = data.rhodis[metal]
     burgers = data.burgers[metal]
     shear = data.shear[metal]/1e9 ## convert to GPa
     poisson = data.poisson[metal]
-    B=None
-    W=None
-    
-    if len(sys.argv)-len(args)>1:
-        args, kwargs = parse_options(sys.argv[1:],OPTIONS,globals())
-        if len(kwargs) > 0:
-            raise ValueError(f"the following commandline options are unknown: {kwargs}")
-        if model not in (mdls:=['micro','greeff']):
-            raise ValueError(f"unknown / not implemented {model=}, must be one of {mdls}")
+
+    if opts.model not in (mdls:=['micro','greeff']):
+        raise ValueError(f"unknown / not implemented {opts.model=}, must be one of {mdls}")
     if Ncpus == 1 and Ncores > 1:
         raise ValueError(f"{Ncores=} requested by user, but parallelization is unvailable; please install joblib")
 
-    if kjma=='auto':
-        kjma=bool(model=='micro')
+    if opts.kjma=='auto':
+        opts.kjma=bool(opts.model=='micro')
+    else:
+        opts.kjma = str2bool(opts.kjma)
     tmpB=tmpW=0
-    if model=='greeff':
+    if opts.model=='greeff':
         tmpB = data.greeffB[metal]
         tmpW = data.greeffW[metal]
     # use these values only if user hasn't set them
-    if B is None:
-        B=tmpB
-    if W is None:
-        W=tmpW
+    if opts.B is None:
+        opts.B=tmpB
+    if opts.W is None:
+        opts.W=tmpW
+
     ## calculate and make importable all pressure-independent stuff:
     Ttarget = 300 ## if we change this, we need to compute the 3 quantities below for the according T
     Ptransition = Ptrans300/1e9 # GPa
-    cpref,epshom,Ndotpref,rhob2,alpha_dis = compute_prefactors(DeltaGPprime=DeltaGPprime300,rhomean=rhomean_coex300,gammaAM=gammaAM,rhodis=rhodis,burgers=burgers,
-                                                               shear=shear,poisson=poisson,atommass=atommass,DeltaP=DeltaP,kappa=kappa,beta=beta)
+    cpref,epshom,Ndotpref,rhob2,alpha_dis = compute_prefactors(DeltaGPprime=DeltaGPprime300,rhomean=rhomean_coex300,gammaAM=opts.gammaAM,rhodis=opts.rhodis,burgers=burgers,
+                                                               shear=shear,poisson=poisson,atommass=atommass,DeltaP=opts.DeltaP,kappa=opts.kappa,beta=opts.beta)
     figtitle_pos = figtitle
-    if include_inverse:
+    if opts.include_inverse:
         figtitle = figtitle_inv
         xmin = 0.1
-    elif model in ['greef']:
+    elif opts.model in ['greef']:
         xmin = 0.1
     else:
         xmin = round(Ptransition-0.5)
-    if model=='greeff':
+    if opts.model=='greeff':
         @np.vectorize
         def lambdaE(P,Pdot=0):
             '''volume fraction from Greeff's model'''
@@ -145,15 +146,16 @@ if __name__ == '__main__':
             else:
                 DeltaG = DeltaGibbs(P,Ttarget)
             DeltaGdot = DeltaGPprime(P,Ttarget)*abs(Pdot)*1e9
-            return 1-lambdaE_Greeff(DeltaG,DeltaGdot,W=W,B=B)
+            return 1-lambdaE_Greeff(DeltaG,DeltaGdot,W=opts.W,B=opts.B)
     else:
         def lambdaE(t,Pdot):
             '''volume fraction from hom. nucleation and nucl. on dislocations'''
-            return lambdaE_hd(t=t, Pdot=Pdot, cpref=cpref, Ndotpref=Ndotpref, epshom=epshom,rhob2=rhob2,alpha_dis=alpha_dis,cmax=cmax,Ttarget=Ttarget,include_hom=include_hom, include_disloc=include_disloc)
+            return lambdaE_hd(t=t, Pdot=Pdot, cpref=cpref, Ndotpref=Ndotpref, epshom=epshom,rhob2=rhob2,alpha_dis=alpha_dis,cmax=opts.cmax,Ttarget=Ttarget,
+                              include_hom=opts.include_hom, include_disloc=opts.include_disloc)
     
     #### nucleation at grain boundaries (2), edges (1), and corners (0)
-    k = 0.5*gammaAA/gammaAM
-    f2g, f1g, f0g = figrain(k,include_gb,include_ge,include_gc)
+    k = 0.5*opts.gammaAA/opts.gammaAM
+    f2g, f1g, f0g = figrain(k,opts.include_gb,opts.include_ge,opts.include_gc)
     
     if metal in ['Fe', 'Sn']:
         ## constants specific to the bcc lattice as well as for beta tin which has a body-centered tetragonal lattice with c/a<sqrt(2), therefore its Voronai polyhedra are truncated octahedra:
@@ -163,35 +165,35 @@ if __name__ == '__main__':
     
     def lambdaEgrain(t,Pdot,delta,D):
         '''volume fraction from nucleation on grain boundaries, edges, and corners'''
-        return lambdaE_grain(t=t, Pdot=Pdot,delta=delta,D=D,cpref=cpref,Ndotpref=Ndotpref,epshom=epshom,f2g=f2g,f1g=f1g,f0g=f0g,s2=s2,s1=s1,s0=s0,cmax=cmax,Ttarget=Ttarget)
+        return lambdaE_grain(t=t, Pdot=Pdot,delta=delta,D=D,cpref=cpref,Ndotpref=Ndotpref,epshom=epshom,f2g=f2g,f1g=f1g,f0g=f0g,s2=s2,s1=s1,s0=s0,cmax=opts.cmax,Ttarget=Ttarget)
 
-    if Npdot==4:
+    if opts.Npdot==4:
         pdotvals = [1,10,100,1000]
-    elif Npdot==6:
+    elif opts.Npdot==6:
         pdotvals = [1e-6,5e-6,1e-5,5e-5,1e-4,5e-4]
-    elif Npdot==7:
+    elif opts.Npdot==7:
         pdotvals = [1,5,10,50,100,500,1000]
-    elif Npdot==8:
+    elif opts.Npdot==8:
         pdotvals = [1,10,100,1000,1e4,1e5,1e6,1e7]
-    elif Npdot==10:
+    elif opts.Npdot==10:
         pdotvals = [1e-8,5e-8,1e-7,5e-7,1e-6,5e-6,1e-5,5e-5,1e-4,5e-4]
-    elif Npdot==18:
+    elif opts.Npdot==18:
         pdotvals = [1e-1,1,5,10,50,100,500,1000,5e3,1e4,5e4,1e5,5e5,1e6,5e6,1e7,5e7,1e8]
-    elif Npdot==16:
+    elif opts.Npdot==16:
         pdotvals = [1e-6,1e-3,1e-1,1,5,10,50,100,500,1000,5e3,1e4,5e4,1e5,5e5,1e6] ## exp. can't reach rates above 1e5 at the moment, add 1e6 to compare to future exp.
     else:
-        raise ValueError(f"{Npdot=} not implemented")
+        raise ValueError(f"{opts.Npdot=} not implemented")
     if np.max(pdotvals)<=1:
-        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+5),resolution)) # GPa
+        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+5),opts.resolution)) # GPa
     elif np.max(pdotvals)<5e3:
-        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+15),resolution)) # GPa
+        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+15),opts.resolution)) # GPa
     elif np.max(pdotvals)<5e6:
-        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+23),resolution)) # GPa
+        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+23),opts.resolution)) # GPa
     else:
-        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+33),resolution)) # GPa
-    if maxP>0:
-        pressure = np.exp(np.linspace(np.log(pressure[0]),np.log(maxP),resolution)) # GPa
-    if include_inverse:
+        pressure = np.exp(np.linspace(np.log(xmin),np.log(round(Ptransition)+33),opts.resolution)) # GPa
+    if opts.maxP>0:
+        pressure = np.exp(np.linspace(np.log(pressure[0]),np.log(opts.maxP),opts.resolution)) # GPa
+    if opts.include_inverse:
         pdotvals = pdotvals + [-pi for pi in pdotvals]
     onsetpressure = np.zeros(np.shape(pdotvals))
     timeP = {}
@@ -202,37 +204,37 @@ if __name__ == '__main__':
     tauplus = {}
     taumin = {}
     
-    if model=='greeff':
-        extendednamestring += f"_greeff_{B=:.0e}_{W=:.0e}"
-    if include_hom and model=='micro':
-        extendednamestring += f"_h{gammaAM}"
-    if include_disloc and model=='micro':
-        extendednamestring += f"_d{rhodis:.0e}"
-    if include_grains and model=='micro':
-        extendednamestring += f"_g{graindiameter}gb{100*f2g:.0f}ge{100*f1g:.0f}gc{100*f0g:.0f}"
+    if opts.model=='greeff':
+        extendednamestring += f"_greeff_B={opts.B:.0e}_W={opts.W:.0e}"
+    if opts.include_hom and opts.model=='micro':
+        extendednamestring += f"_h{opts.gammaAM}"
+    if opts.include_disloc and opts.model=='micro':
+        extendednamestring += f"_d{opts.rhodis:.0e}"
+    if opts.include_grains and opts.model=='micro':
+        extendednamestring += f"_g{opts.graindiameter}gb{100*f2g:.0f}ge{100*f1g:.0f}gc{100*f0g:.0f}"
     
     def maincomputations(xi,pi):
-        if verbose:
+        if opts.verbose:
             print(f"calculating for Pdot={pi:.2e} ...")
         ## Note: if pi<0, volfrac and onsetpressure change their meaning and are for volfrac of 1st phase (inverse phase trafo and t grows as P shrinks from Ptrans)
         timeP = t_of_P_ramp(pressure,pi,Ptransition)
-        if model=='micro':
+        if opts.model=='micro':
             lamE = lambdaE(timeP,abs(pi))
         else:
             lamE = lambdaE(pressure*1e9,pi)
-        if include_grains and model=='micro':
-            lamE += np.asarray([lambdaEgrain(timeP[ti],abs(pi), delta=grainthickness, D=graindiameter) for ti in range(len(timeP))])
+        if opts.include_grains and opts.model=='micro':
+            lamE += np.asarray([lambdaEgrain(timeP[ti],abs(pi), delta=opts.grainthickness, D=opts.graindiameter) for ti in range(len(timeP))])
         # x = np.abs(pressure-Ptransition)/3#DeltaP
         # equilibriumfactor = (1-0.5*rampR(1-x))
         volfrac = (1-np.exp(-lamE)) #*equilibriumfactor
-        if not kjma:
+        if not opts.kjma:
             volfrac = lamE
         resplus = 1-np.exp(-lamE*1e3)
         resmin = 1-np.exp(-lamE/1e3)
         tau = relaxtime(volfrac, timeP)
         tauplus = relaxtime(resplus, timeP)
         taumin = relaxtime(resmin, timeP)
-        if not kjma or model!='micro':
+        if not opts.kjma or opts.model!='micro':
             tauplus = taumin = 0
         if len(pressure[volfrac<=0.05])>0:
             onsetpressure = pressure[volfrac<=0.05][-1] ## pressure when volume fraction reaches 5%
@@ -244,7 +246,7 @@ if __name__ == '__main__':
             print(f"Warning: {onsetpressure=}, {pressure[-1]=}, expect clipping for Pdot={pi:.2e}")
         return (volfrac, resplus, resmin, tau, tauplus, taumin, onsetpressure, timeP)
 
-    if skip_calcs:
+    if opts.skip_calcs:
         pdotvals, pressure, onsetpressure, timeP, res, resplus, resmin, tau, tauplus, taumin = readresults(extendednamestring)
     else:
         if Ncores > 1:
@@ -264,8 +266,8 @@ if __name__ == '__main__':
                     onsetpressure[xi] = np.min(pressure)
                     print(f"Warning: {onsetpressure[xi]=}, {min(pressure)=}, expect clipping for Pdot={pi:.2e}")
         
-        optiondict = showoptions(OPTIONS,globaldict=globals())
-        if (maxP:=int(onsetpressure[-1]+1))<int(pressure[-1]+1) and OPTIONS is not False:
+        optiondict = vars(opts)
+        if (maxP:=int(onsetpressure[-1]+1))<int(pressure[-1]+1):
             optiondict |= {'# recommended maxP:\n#maxP':maxP}
         writeresults(extendednamestring, pdotvals, pressure, onsetpressure, timeP, res, resplus, resmin, tau, tauplus, taumin, optiondict)
     
@@ -283,7 +285,7 @@ if __name__ == '__main__':
     # if np.max(pdotvals) <= 1 or include_inverse:
     xlimits = None
     if onsetpressure is not None:
-        plot_Vfrac_P_Pdot(res,pressure,pdotvals,figtitle=figtitle,ylabel=ylabel,extendednamestring=extendednamestring,figsize=figsize,xlimits=xlimits,every=every,showfig=showfigs)
+        plot_Vfrac_P_Pdot(res,pressure,pdotvals,figtitle=figtitle,ylabel=ylabel,extendednamestring=extendednamestring,figsize=figsize,xlimits=xlimits,every=every,showfig=opts.showfigs)
         
     # relaxation time:
     skiptau = 5e6
@@ -293,10 +295,10 @@ if __name__ == '__main__':
         startat = 2
     pdotvals2 = np.asarray(pdotvals_pos)
     pdotvals2 = (pdotvals2[pdotvals2<skiptau])[startat:]
-    if model=='greeff': ## include inverse so that we have something to show in the greeff case (forward has ~0 relaxation time)
-        plot_relaxtime(tau=tau, taumin=taumin, tauplus=tauplus, pdotvals=pdotvals, extendednamestring=extendednamestring,figtitle=figtitle,showfig=showfigs)
+    if opts.model=='greeff': ## include inverse so that we have something to show in the greeff case (forward has ~0 relaxation time)
+        plot_relaxtime(tau=tau, taumin=taumin, tauplus=tauplus, pdotvals=pdotvals, extendednamestring=extendednamestring,figtitle=figtitle,showfig=opts.showfigs)
     else:
-        plot_relaxtime(tau=tau, taumin=taumin, tauplus=tauplus, pdotvals=pdotvals2, extendednamestring=extendednamestring,figtitle=figtitle_pos,showfig=showfigs)
+        plot_relaxtime(tau=tau, taumin=taumin, tauplus=tauplus, pdotvals=pdotvals2, extendednamestring=extendednamestring,figtitle=figtitle_pos,showfig=opts.showfigs)
     
     # approximate pressure at phase transition as fct of loading strain rate P-dot
     PdotP = (np.abs(pdotvals_pos)*1e6/np.array(onsetpressure_pos))
@@ -312,5 +314,5 @@ if __name__ == '__main__':
         nonlinfit = None
     if onsetpressure is not None and np.isclose(np.max(pressure),np.max(onsetpressure)):
         print(f"Warning: {max(onsetpressure)=} reached maximum probed pressure ({max(pressure)=}); may want to increase the latter to avoid clipping in the onsetP plot?")
-    plot_onsetP(onsetpressure_pos,pdotvals=pdotvals_pos,figtitle=figtitle_pos,extendednamestring=extendednamestring,linearfit=linearfit,nonlinfit=nonlinfit,showfig=showfigs)
-    plot_onsetP2(onsetpressure,pdotvals=pdotvals,figtitle=figtitle,extendednamestring=extendednamestring,Ptrans=Ptransition,showfig=showfigs)
+    plot_onsetP(onsetpressure_pos,pdotvals=pdotvals_pos,figtitle=figtitle_pos,extendednamestring=extendednamestring,linearfit=linearfit,nonlinfit=nonlinfit,showfig=opts.showfigs)
+    plot_onsetP2(onsetpressure,pdotvals=pdotvals,figtitle=figtitle,extendednamestring=extendednamestring,Ptrans=Ptransition,showfig=opts.showfigs)
