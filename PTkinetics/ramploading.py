@@ -145,6 +145,8 @@ if __name__ == '__main__':
 
     if kjma=='auto':
         kjma=bool(model=='micro')
+    else:
+        kjma = str2bool(kjma)
     tmpB=tmpW=0
     if model=='greeff':
         tmpB = data.greeffB[metal]
@@ -154,6 +156,7 @@ if __name__ == '__main__':
         B=tmpB
     if W is None:
         W=tmpW
+
     ## calculate and make importable all pressure-independent stuff:
     Ttarget = 300 ## if we change this, we need to compute the 3 quantities below for the according T
     Ptransition = Ptrans300/1e9 # GPa
