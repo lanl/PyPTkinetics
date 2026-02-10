@@ -109,11 +109,12 @@ def writeresults(extendednamestring, pdotvals, pressure, ramppressure, timeP, re
         kwds[f'tau_{xi}'] = np.array([tau[pi], tauplus[pi], taumin[pi]])
         kwds[f'time_{xi}'] = timeP[pi]
     np.savez_compressed(f"{extendednamestring}_results.npz",pdotvals=np.asarray(pdotvals),pressure=pressure,ramppressure=ramppressure, **kwds)
-    with open(extendednamestring+".log", "w", encoding="utf8") as logfile:
-        logfile.write(f"# {extendednamestring.split('_')[0]}:\n")
-        for key, item in optiondict.items():
-            if key not in ['verbose', 'skip_calcs', 'Ncores']:
-                logfile.write(f"{key} = {item}\n")
+    if optiondict is not None:
+        with open(extendednamestring+".log", "w", encoding="utf8") as logfile:
+            logfile.write(f"# {extendednamestring.split('_')[0]}:\n")
+            for key, item in optiondict.items():
+                if key not in ['verbose', 'skip_calcs', 'Ncores']:
+                    logfile.write(f"{key} = {item}\n")
     return 0
 
 def readresults(extendednamestring,wd=None):
