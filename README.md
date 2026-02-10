@@ -22,6 +22,12 @@ This program was produced under U.S. Government contract 89233218CNA000001 for L
 * [matplotlib](https://matplotlib.org/) >=3.3</br>
 * [pandas](https://pandas.pydata.org/) >=1.3 (and Jinja2)</br>
 
+### Optional (but recommended):
+
+* [joblib](https://joblib.readthedocs.io) >=1.1 (for parallelization),</br>
+* [numba](https://numba.pydata.org/) >=0.53 (for speedup via just-in-time compilation of some subroutines),</br>
+* [jupyter](https://jupyter.org/) to view and run the examples notebook
+
 ## License
 
 This program is Open-Source under the BSD-3 License.</br>

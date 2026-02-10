@@ -1,0 +1,11 @@
+# Iron:
+material = Fe
+maxP = 0
+resolution = 1000
+Npdot = 4
+include_inverse = True
+model = greeff
+kjma = auto
+B = None
+W = None
+showfigs = False
