@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed May  8 12:32:12 2024
-last modified: Feb. 6, 2026
+last modified: Feb. 10, 2026
 @author: dblaschke
 
 This submodule provides various utility functions such as write/read calculation results and loading 3rd party modules if available.
@@ -61,7 +61,9 @@ def convert_arg_line_to_args(line):
                         value = value[:-1]
                         break
                     value += addval
-            if 'None' not in value:
+            if key=='material':
+                out = [value]
+            elif 'None' not in value:
                 out = ["--"+key,value]
     return out
 
@@ -110,7 +112,7 @@ def writeresults(extendednamestring, pdotvals, pressure, ramppressure, timeP, re
     with open(extendednamestring+".log", "w", encoding="utf8") as logfile:
         logfile.write(f"# {extendednamestring.split('_')[0]}:\n")
         for key, item in optiondict.items():
-            if key not in ['verbose', 'skip_calcs', 'Ncores', 'material', 'fromfile']:
+            if key not in ['verbose', 'skip_calcs', 'Ncores']:
                 logfile.write(f"{key} = {item}\n")
     return 0
 
