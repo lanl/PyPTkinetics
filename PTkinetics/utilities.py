@@ -67,11 +67,11 @@ def convert_arg_line_to_args(line):
                 out = ["--"+key,value]
     return out
 
-def isclose(f1,f2):
+def isclose(f1,f2,rtol=1e-05, atol=1e-08):
     '''Returns True if all elements of arrays f1 and f2 are 'close' to one another and their shapes match, and False otherwise.'''
     out = False
     if f1.shape==f2.shape:
-        out = np.allclose(f1,f2,equal_nan=True)
+        out = np.allclose(f1,f2,equal_nan=True,rtol=rtol,atol=atol)
     return out
 
 def str2bool(arg):
@@ -84,7 +84,7 @@ def str2bool(arg):
         raise ValueError(f"cannot convert {arg} to bool")
     return out
 
-def compare_df(f1,f2):
+def compare_df(f1,f2,rtol=1e-05, atol=1e-08):
     '''Compares two pandas.DataFrames using the pandas.compare method, but ignoring rounding errors (i.e. everything numpy.isclose decides is close enough)'''
     if f1.shape != f2.shape:
         return f"Error: Cannot compare arrays with different shapes: {f1.shape=}, {f2.shape=}"
@@ -92,9 +92,9 @@ def compare_df(f1,f2):
         f1 = pd.DataFrame(f1)
         f2 = pd.DataFrame(f2)
     if isinstance(f1, pd.Series) or isinstance(f2, pd.Series):
-        themask = pd.Series(np.invert(np.isclose(f1,f2,equal_nan=True)),index=f1.index)
+        themask = pd.Series(np.invert(np.isclose(f1,f2,equal_nan=True,rtol=rtol,atol=atol)),index=f1.index)
     else:
-        themask = pd.DataFrame(np.invert(np.isclose(f1,f2,equal_nan=True)),index=f1.index,columns=f1.columns)
+        themask = pd.DataFrame(np.invert(np.isclose(f1,f2,equal_nan=True,rtol=rtol,atol=atol)),index=f1.index,columns=f1.columns)
     f1masked = f1[themask]
     f2masked = f2[themask]
     return f1masked.compare(f2masked)
@@ -164,7 +164,7 @@ def rampR(x):
     '''computes x*Theta(x)'''
     return x*np.heaviside(x,1/2)
 
-def compare_results(f1,f2,verbose=False):
+def compare_results(f1,f2,verbose=False,rtol=1e-05, atol=1e-08):
     '''compares results of 2 different runs; can be used for regression testing'''
     success = True
     if isinstance(f1, str):
@@ -193,8 +193,8 @@ def compare_results(f1,f2,verbose=False):
                 f2a = pd.DataFrame(f2a)
             except ValueError:
                 f2a = pd.Series(f2a)
-        if not isclose(f1a,f2a):
+        if not isclose(f1a,f2a,rtol=rtol,atol=atol):
             print(f"{x} differs")
             success=False
-            if verbose: print(compare_df(f1a,f2a))
+            if verbose: print(compare_df(f1a,f2a,rtol=rtol,atol=atol))
     return success

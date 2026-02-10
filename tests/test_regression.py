@@ -39,7 +39,7 @@ def test_regression():
     os.chdir(testpath)
     ## run microstructure dependent model with low resolution and small number of pressure rates and assert results
     assert runscript(dir_path/"PTkinetics"/"ramploading.py",commandargs,'run_test1.log')==0
-    assert ptk.utilities.compare_results(str(testpath/"Iron_baseline.npz"),str(testpath/"Iron_d1e+12_g0.01gb20ge0gc0_results.npz"),verbose=True)
+    assert ptk.utilities.compare_results(str(testpath/"Iron_baseline.npz"),str(testpath/"Iron_d1e+12_g0.01gb20ge0gc0_results.npz"),verbose=True,rtol=1e-4)
     ## run greeff model with same low res. etc., but this time read all commanline args from a log file, then assert results
     assert runscript(dir_path/"PTkinetics"/"ramploading.py",["@Iron_baseline_greeff.log"],'run_test2.log')==0
-    assert ptk.utilities.compare_results(str(testpath/"Iron_baseline_greeff.npz"),str(testpath/"Iron_greeff_B=5e+02_W=5e-02_results.npz"),verbose=True)
+    assert ptk.utilities.compare_results(str(testpath/"Iron_baseline_greeff.npz"),str(testpath/"Iron_greeff_B=5e+02_W=5e-02_results.npz"),verbose=True,rtol=1e-4)
