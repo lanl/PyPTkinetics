@@ -38,6 +38,14 @@ def test_regression_micro():
     assert runscript(dir_path/"PTkinetics"/"ramploading.py",commandargs,'run_test1.log')==0
     assert ptk.utilities.compare_results(str(testpath/"Iron_baseline.npz"),str(testpath/"Iron_d1e+12_g0.01gb20ge0gc0_results.npz"),verbose=True,rtol=1e-4)
 
+def test_regression_micro_for():
+    '''regression test: run microstructure dependent model with low resolution and small number of pressure rates and assert results;
+       in this version of the test we use the fortran subroutines.'''
+    commandargs = "Fe -v --Npdot=4 --resolution=1000".split(" ")
+    os.chdir(testpath)
+    assert runscript(dir_path/"PTkinetics"/"ramploading_for.py",commandargs,'run_test1.log')==0
+    assert ptk.utilities.compare_results(str(testpath/"Iron_baseline.npz"),str(testpath/"Iron_d1e+12_g0.01gb20ge0gc0_results.npz"),verbose=True,rtol=1e-4)
+
 def test_regression_greeff():
     '''regression test: run greeff model with same low res. etc., reading all commandline args from a log file, then assert results'''
     os.chdir(testpath)

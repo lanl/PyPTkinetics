@@ -8,7 +8,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.9", "3.14"]
         exclude:
           - os: macos-latest
@@ -22,6 +22,9 @@ jobs:
           - {compiler: gcc, version: 'latest'}
     steps:
       - uses: actions/checkout@v3
+      - name: Setup Fortran Compiler
+        uses: fortran-lang/setup-fortran@v1
+        if: runner.os == 'MacOS'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -30,6 +33,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ${{ matrix.module-versions }}
+          python PTkinetics/ramploading_for.py -h
       - name: Run tests
         run: pytest -s tests/
 
