@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Nov. 13, 2024
+last modified: Feb. 5, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to calculate the volume fraction of the second phase
@@ -126,15 +126,15 @@ quadlimit=30 ## max no of subintervals; default: 50
 def lambdaE_hd(t,Pdot,cpref,Ndotpref,epshom,rhob2,alpha_dis,cmax=np.inf,Ttarget=300,include_hom=True, include_disloc=True):
     '''volume fraction from hom. nucleation and nucl. on dislocations'''
     def lmbdE(t):
+        out = (0.,0.)
         if t>0 and (include_hom or include_disloc):
             if include_disloc and include_hom:
-                out = quad(lambda tp: integrand_hom(tp,t,Pdot,cpref,Ndotpref,epshom,cmax=cmax,Ttarget=Ttarget)+integrand_dis(tp,t,Pdot,cpref,Ndotpref,epshom,rhob2,alpha_dis,cmax=cmax,Ttarget=Ttarget), 0, t, epsabs=quadepsabs, epsrel=quadepsrel, limit=quadlimit)
+                out = quad(lambda tp: integrand_hom(tp,t,Pdot,cpref,Ndotpref,epshom,cmax=cmax,Ttarget=Ttarget)
+                           +integrand_dis(tp,t,Pdot,cpref,Ndotpref,epshom,rhob2,alpha_dis,cmax=cmax,Ttarget=Ttarget), 0, t, epsabs=quadepsabs, epsrel=quadepsrel, limit=quadlimit)
             elif include_hom:
                 out = quad(lambda tp: integrand_hom(tp,t,Pdot,cpref,Ndotpref,epshom,cmax=cmax,Ttarget=Ttarget), 0, t, epsabs=quadepsabs, epsrel=quadepsrel, limit=quadlimit)
             elif include_disloc:
                 out = quad(lambda tp: integrand_dis(tp,t,Pdot,cpref,Ndotpref,epshom,rhob2,alpha_dis,cmax=cmax,Ttarget=Ttarget), 0, t, epsabs=quadepsabs, epsrel=quadepsrel, limit=quadlimit)
-        else:
-            out = (0.,0.)
         return out[0]*Pdot**3
     if isinstance(t,float):
         out = lmbdE(t)
@@ -197,4 +197,15 @@ def lambdaE_grain(t,Pdot,delta,D,cpref,Ndotpref,epshom,f2g,f1g,f0g,s2,s1,s0,cmax
         out = lmbdE(t)
     else:
         raise ValueError("arrays are not supported by this fct.")
+    return out
+
+def lambdaE_Greeff(DeltaG,DeltaGdot,W,B):
+    '''Implementation of an approximation to Carl Greeff's model.
+       DeltaGdot is the time derivative of the difference in Gibbs free energy assumed to be constant in this approximation.
+       Refs.: C. W. Greeff, J. Dynamic Behavior Mater. (2016) 2:452, doi:10.1007/s40870-016-0080-4;
+              A. E. Mattsson Wills, LANL Tech. Rep. 2022, LA-UR-22-32182, doi:10.2172/1900445.
+       Dimensions of the model parameters: [B]=[DeltaG], [W] 1/micro-sec.'''
+    out = 1
+    if DeltaG>0:
+        out = np.exp(-W*B*(np.exp((DeltaG/B)**2) - 1)/(2*DeltaGdot))
     return out
