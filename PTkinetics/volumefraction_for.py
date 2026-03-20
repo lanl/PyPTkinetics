@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Feb. 5, 2026
+last modified: Mar. 20, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to calculate the volume fraction of the second phase
@@ -27,8 +27,9 @@ try:
 except ImportError:
     print("ERROR importing Fortran sub-module 'fraction_subroutines'; attempting to recompile ...\n")
     if compilefortranmodule()==0:
-        print("\nSUCCESS - please rerun/reload this script")
-        sys.exit()
+        print("\nSUCCESS - reloading")
+        from .fraction_subroutines import compute_prefactors, integrand_hom, integrand_dis, integrandgrain2, tpmaxgrain21, integrandgrain1, integrandgrain0
+        from .fraction_subroutines import f2grain, f1grain, f0grain
     else:
         print("\nFAILED to compile Fortran sub-module 'fraction_subroutines' - please check the f2py logs")
 
