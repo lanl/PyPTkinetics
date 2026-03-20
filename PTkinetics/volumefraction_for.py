@@ -12,6 +12,8 @@ import sys
 import os
 import numpy as np
 from scipy.integrate import quad, dblquad
+if hasattr(os, 'add_dll_directory'):
+    os.add_dll_directory(os.path.dirname(os.path.realpath(__file__))) # workaround for windows runner on github
 
 def compilefortranmodule():
     '''compiles the Fortran subroutines if a Fortran compiler is available'''
