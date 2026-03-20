@@ -1,21 +1,17 @@
 ! Author: Daniel N. Blaschke
-! Date: Nov. 13, 2024
+! Date: Mar. 20, 2026
 ! requires a Fortran 2008 or later (using complementary error function)
 
 module parameters
 implicit none
 integer,parameter :: sel = selected_real_kind(10)
+integer,parameter :: version = 20260320
 real(kind=sel), parameter :: kB = 1.38064852d-23        ! Boltzmann constant
 real(kind=sel), parameter :: pi = (4.d0*atan(1.d0)) ! pi
 real(kind=sel), parameter :: pi2 = (4.d0*atan(1.d0))**2 ! pi squared
 real(kind=sel), parameter :: amu = 1.66053904d-27 ! atomic mass unit [kg]
 real(kind=sel), parameter :: avogadro = 6.02214076d23 ! 1/mol
 end module parameters
-
-subroutine version(versionnumber)
-  integer, intent(out) :: versionnumber
-  versionnumber=20241113
-end subroutine version
 
 SUBROUTINE exp1(x,approxE1)
 ! this implementation of the exponential integral E1(x) for real numbers uses approximations
@@ -39,7 +35,7 @@ SUBROUTINE exp1(x,approxE1)
     approxE1 = (numer/denom)*exp(-x)/x
   else
     approxE1 = ieee_value( x, ieee_signaling_nan )
-  endif
+  end if
   
 END SUBROUTINE exp1
     
@@ -55,7 +51,7 @@ SUBROUTINE fdis(alpha,eps,fdisloc)
   fdisloc = eps
   if (alpha<1.d0) then
     fdisloc = max((1-alpha)*(1-4*alpha/5),eps)
-  endif
+  end if
   
   RETURN
 END SUBROUTINE fdis
@@ -72,7 +68,7 @@ SUBROUTINE f2grain(k,f2)
   f2=0.d0
   if (k<1.d0) then
     f2 = 0.5d0*(2.d0-3.d0*k+k**2)
-  endif
+  end if
   
   RETURN
 END SUBROUTINE f2grain
@@ -89,7 +85,7 @@ SUBROUTINE f1grain(k,f1)
   f1=0.d0
   if (k<sqrt(3.d0)/2.d0) then
     f1 = (1.d0-2.d0*k/sqrt(3.d0))**2
-  endif
+  end if
   
   RETURN
 END SUBROUTINE f1grain
@@ -106,7 +102,7 @@ SUBROUTINE f0grain(k,f0)
   f0=0.d0
   if (k<sqrt(2.d0/3.d0)) then
     f0 = (1-k/sqrt(2.d0/3.d0))**(5.d0/2.d0)
-  endif
+  end if
   
   RETURN
 END SUBROUTINE f0grain
