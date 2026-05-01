@@ -17,15 +17,15 @@ This program was produced under U.S. Government contract 89233218CNA000001 for L
 ## Requirements
 
 * Python >=3.9,</br>
-* [numpy](https://numpy.org/doc/stable/user/) >=1.19,</br>
-* [scipy](https://docs.scipy.org/doc/scipy/reference/) >=1.9,</br>
-* [matplotlib](https://matplotlib.org/) >=3.3</br>
-* [pandas](https://pandas.pydata.org/) >=1.3 (and Jinja2)</br>
+* [numpy](https://numpy.org/doc/stable/user/) >=1.26,</br>
+* [scipy](https://docs.scipy.org/doc/scipy/reference/) >=1.10,</br>
+* [matplotlib](https://matplotlib.org/) >=3.8</br>
+* [pandas](https://pandas.pydata.org/) >=1.5 (and Jinja2)</br>
 
 ### Optional (but recommended):
 
 * [joblib](https://joblib.readthedocs.io) >=1.1 (for parallelization),</br>
-* [numba](https://numba.pydata.org/) >=0.53 (for speedup via just-in-time compilation of some subroutines),</br>
+* [numba](https://numba.pydata.org/) >=0.58.1 (for speedup via just-in-time compilation of some subroutines),</br>
 * [jupyter](https://jupyter.org/) to view and run the examples notebook
 
 ## License

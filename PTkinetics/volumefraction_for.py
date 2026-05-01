@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Mar. 20, 2026
+last modified: Apr. 13, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to calculate the volume fraction of the second phase
 due to nucleation on dislocations, grains, and homogeneous nucleation.
 """
-import sys
 import os
 import numpy as np
 from scipy.integrate import quad, dblquad
@@ -17,19 +16,26 @@ def compilefortranmodule():
     '''compiles the Fortran subroutines if a Fortran compiler is available'''
     cwd = os.getcwd()
     os.chdir(os.path.dirname(__file__))
-    exitcode = os.system('python -m numpy.f2py -c fraction_subroutines.f90 -m fraction_subroutines')
+    compilerflags = ' --backend=meson'
+    exitcode = os.system('python -m numpy.f2py -c fraction_subroutines.f90 -m fraction_subroutines'+compilerflags)
     os.chdir(cwd)
     return exitcode
 
 try:
-    from .fraction_subroutines import compute_prefactors, integrand_hom, integrand_dis, integrandgrain2, tpmaxgrain21, integrandgrain1, integrandgrain0
-    from .fraction_subroutines import f2grain, f1grain, f0grain
+    from . import fraction_subroutines as fsub
+    compute_prefactors, integrand_hom = (fsub.various_subroutines.compute_prefactors, fsub.various_subroutines.integrand_hom)
+    integrand_dis = fsub.disloc.integrand_dis
+    integrandgrain2, tpmaxgrain21, integrandgrain1, integrandgrain0, f2grain, f1grain, f0grain = (fsub.grains.integrandgrain2, \
+      fsub.grains.tpmaxgrain21, fsub.grains.integrandgrain1, fsub.grains.integrandgrain0, fsub.grains.f2grain, fsub.grains.f1grain, fsub.grains.f0grain)
 except ImportError:
     print("ERROR importing Fortran sub-module 'fraction_subroutines'; attempting to recompile ...\n")
     if compilefortranmodule()==0:
         print("\nSUCCESS - reloading")
-        from .fraction_subroutines import compute_prefactors, integrand_hom, integrand_dis, integrandgrain2, tpmaxgrain21, integrandgrain1, integrandgrain0
-        from .fraction_subroutines import f2grain, f1grain, f0grain
+        from . import fraction_subroutines as fsub
+        compute_prefactors, integrand_hom = (fsub.various_subroutines.compute_prefactors, fsub.various_subroutines.integrand_hom)
+        integrand_dis = fsub.disloc.integrand_dis
+        integrandgrain2, tpmaxgrain21, integrandgrain1, integrandgrain0, f2grain, f1grain, f0grain = (fsub.grains.integrandgrain2, \
+          fsub.grains.tpmaxgrain21, fsub.grains.integrandgrain1, fsub.grains.integrandgrain0, fsub.grains.f2grain, fsub.grains.f1grain, fsub.grains.f0grain)
     else:
         print("\nFAILED to compile Fortran sub-module 'fraction_subroutines' - please check the f2py logs")
 
