@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Feb. 6, 2026
+last modified: Feb. 9, 2026
 @author: Daniel N. Blaschke
 
 This script applies the phase transformation kinetics models implemented in this package
@@ -19,7 +19,7 @@ if dir_path not in sys.path:
 
 from PTkinetics import data
 from PTkinetics.volumefraction import compute_prefactors, relaxtime, t_of_P_ramp, figrain, sigrain, lambdaE_hd, lambdaE_grain,\
-    lambdaE_Greeff
+    lambdaE_Greeff, lambdaE_Fermi
 from PTkinetics.PTkin_figures import plot_Vfrac_P_Pdot, plot_relaxtime, plot_onsetP, plot_onsetP2 #, plot_Vfrac_time_Pdot
 from PTkinetics.utilities import Ncores, Ncpus, nonumba, writeresults, readresults, str2bool, convert_arg_line_to_args#, rampR
 if nonumba:
@@ -29,7 +29,7 @@ if Ncpus>1:
 else:
     print("Warning: Parallelization is disabled because 'joblib' is not installed")
 
-implemented = ['Fe']
+implemented = ['Fe', 'Sn']
 parser = argparse.ArgumentParser(usage=f"\n{sys.argv[0]} <options> <material>",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                  fromfile_prefix_chars='@')
@@ -57,10 +57,12 @@ parser.add_argument('-Ncores','--Ncores',type=int,default=Ncores,help='override 
 parser.add_argument('-skip_calcs','--skip_calcs',action='store_true',help='attempt to read from the cwd on disk previously calculated results to plot')
 parser.add_argument('-cmax','--cmax',type=float,default=np.inf,help='maximum interface speed; will be set to the transverse sound speed of chosen material if the user sets a negative value')
 parser.add_argument('-include_inverse','--include_inverse',type=str2bool,default=True,help="include also the inverse phase transformation")
-parser.add_argument('-model','--model',type=str,default='micro',help="choose between 'micro' and 'greeff'")
+parser.add_argument('-model','--model',type=str,default='micro',help="choose between 'micro', 'fermi', 'greeff'")
 parser.add_argument('-kjma','--kjma',type=str,default='auto',help="for debugging only; implied by model")
 parser.add_argument('-B','--B',type=float,default=None,help='model parameter')
 parser.add_argument('-W','--W',type=float,default=None,help='model parameter')
+parser.add_argument('-gammaW','--gammaW',type=float,default=None,help='model parameter')
+parser.add_argument('-gammaB','--gammaB',type=float,default=None,help='model parameter')
 parser.add_argument('-showfigs','--showfigs',type=str2bool,default=False,help='show the generated figures in addition to saving them (useful when running in jupyter)')
 
 if __name__ == '__main__':
@@ -72,12 +74,12 @@ if __name__ == '__main__':
         figtitle = r'$\alpha$(bcc)$\to\epsilon$(hcp) transition in Fe'
         figtitle_inv = r'$\alpha$(bcc)$\to\epsilon$(hcp)$\to\alpha$(bcc) transition in Fe'
         ylabel = r'$\epsilon$-Fe volume fraction'
-    # elif metal == 'Sn':
-    #     from PTkinetics.eos.tin import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
-    #     extendednamestring = "Tin"
-    #     figtitle = r'$\beta\to\gamma$ transition in Sn'
-    #     figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
-    #     ylabel = r'$\gamma$-Sn volume fraction'
+    elif metal == 'Sn':
+        from PTkinetics.eos.tin import Ptrans300, rhomean_coex300, DeltaGPprime, DeltaGPprime300, DeltaGibbs
+        extendednamestring = "Tin"
+        figtitle = r'$\beta\to\gamma$ transition in Sn'
+        figtitle_inv = r'$\beta\to\gamma\to\beta$ transition in Sn'
+        ylabel = r'$\gamma$-Sn volume fraction'
     else:
         raise ValueError(f"not implemented for {metal=}; \nplease choose one of: {implemented}")
     ## load default model parameters of new PT kinetics model:
@@ -105,7 +107,7 @@ if __name__ == '__main__':
     shear = data.shear[metal]/1e9 ## convert to GPa
     poisson = data.poisson[metal]
 
-    if opts.model not in (mdls:=['micro','greeff']):
+    if opts.model not in (mdls:=['micro','greeff','fermi']):
         raise ValueError(f"unknown / not implemented {opts.model=}, must be one of {mdls}")
     if Ncpus == 1 and Ncores > 1:
         raise ValueError(f"{Ncores=} requested by user, but parallelization is unvailable; please install joblib")
@@ -114,15 +116,26 @@ if __name__ == '__main__':
         opts.kjma=bool(opts.model=='micro')
     else:
         opts.kjma = str2bool(opts.kjma)
-    tmpB=tmpW=0
-    if opts.model=='greeff':
+    tmpB=tmpW=tmpgammaB=tmpgammaW=0
+    if opts.model=='fermi':
+        tmpB = data.fermiB[metal]
+        tmpW = data.fermiW[metal]
+        tmpgammaB = data.fermigammaB[metal]
+        tmpgammaW = data.fermigammaW[metal]
+    elif opts.model=='greeff':
         tmpB = data.greeffB[metal]
         tmpW = data.greeffW[metal]
+        tmpgammaB = tmpgammaW = 0
     # use these values only if user hasn't set them
     if opts.B is None:
         opts.B=tmpB
     if opts.W is None:
         opts.W=tmpW
+    if opts.gammaB is None:
+        opts.gammaB=tmpgammaB
+    if opts.gammaW is None:
+        opts.gammaW=tmpgammaW
+    del tmpB, tmpW, tmpgammaB, tmpgammaW
 
     ## calculate and make importable all pressure-independent stuff:
     Ttarget = 300 ## if we change this, we need to compute the 3 quantities below for the according T
@@ -133,7 +146,7 @@ if __name__ == '__main__':
     if opts.include_inverse:
         figtitle = figtitle_inv
         xmin = 0.1
-    elif opts.model in ['greef']:
+    elif opts.model in ['greef','fermi']:
         xmin = 0.1
     else:
         xmin = round(Ptransition-0.5)
@@ -146,7 +159,13 @@ if __name__ == '__main__':
             else:
                 DeltaG = DeltaGibbs(P,Ttarget)
             DeltaGdot = DeltaGPprime(P,Ttarget)*abs(Pdot)*1e9
-            return 1-lambdaE_Greeff(DeltaG,DeltaGdot,W=opts.W,B=opts.B)
+            return 1-lambdaE_Greeff(DeltaG,DeltaGdot,W=opts.W,B=opts.B,Prate=Pdot/Ptransition,gammaW=opts.gammaW,gammaB=opts.gammaB)
+    elif opts.model=='fermi':
+        @np.vectorize
+        def lambdaE(P,Pdot=0):
+            '''volume fraction from Mattsson's model using a Fermi-Dirac distribution'''
+            DeltaG = DeltaGibbs(P,Ttarget)
+            return 1 - lambdaE_Fermi(DeltaG,W=opts.W,B=opts.B,Prate=Pdot/Ptransition,gammaW=opts.gammaW,gammaB=opts.gammaB)
     else:
         def lambdaE(t,Pdot):
             '''volume fraction from hom. nucleation and nucl. on dislocations'''
@@ -206,6 +225,10 @@ if __name__ == '__main__':
     
     if opts.model=='greeff':
         extendednamestring += f"_greeff_B={opts.B:.0e}_W={opts.W:.0e}"
+        if opts.gammaW>0 or opts.gammaB>0:
+            extendednamestring += f"_gammaW={opts.gammaW:.0e}_gammaB={opts.gammaB:.0e}"
+    if opts.model=='fermi':
+        extendednamestring += f"_fermi_B={opts.B:.0e}_W={opts.W:.0e}_gammaW={opts.gammaW:.0e}_gammaB={opts.gammaB:.0e}"
     if opts.include_hom and opts.model=='micro':
         extendednamestring += f"_h{opts.gammaAM}"
     if opts.include_disloc and opts.model=='micro':

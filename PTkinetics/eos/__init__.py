@@ -8,3 +8,4 @@ last modified: Apr. 18, 2024
 This submodule implements equations of state for two phases of various materials.
 """
 from . import iron
+from . import tin
