@@ -51,3 +51,10 @@ def test_regression_greeff():
     os.chdir(testpath)
     assert runscript(dir_path/"PTkinetics"/"ramploading.py",["@Iron_baseline_greeff.log"],'run_test2.log')==0
     assert ptk.utilities.compare_results(str(testpath/"Iron_baseline_greeff.npz"),str(testpath/"Iron_greeff_B=5e+02_W=5e-02_results.npz"),verbose=True,rtol=1e-4)
+
+def test_regression_fermi():
+    '''regression test: run fermi model for tin, then assert results'''
+    os.chdir(testpath)
+    commandargs = "-model fermi Sn -v --Npdot=4 --resolution=100 -W 5e3 --B 5e2 -gammaW=3e-1 --gammaB=5e-1".split(" ")
+    assert runscript(dir_path/"PTkinetics"/"ramploading.py",commandargs,'run_test3.log')==0
+    assert ptk.utilities.compare_results(str(testpath/"Tin_baseline_fermi.npz"),str(testpath/"Tin_fermi_B=5e+02_W=5e+03_gammaW=3e-01_gammaB=5e-01_results.npz"),verbose=True,rtol=1e-4)
