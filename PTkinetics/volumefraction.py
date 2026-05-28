@@ -199,13 +199,32 @@ def lambdaE_grain(t,Pdot,delta,D,cpref,Ndotpref,epshom,f2g,f1g,f0g,s2,s1,s0,cmax
         raise ValueError("arrays are not supported by this fct.")
     return out
 
-def lambdaE_Greeff(DeltaG,DeltaGdot,W,B):
-    '''Implementation of an approximation to Carl Greeff's model.
+def lambdaE_Greeff(DeltaG,DeltaGdot,W,B,Prate=0,gammaW=0,gammaB=0):
+    '''Implementation of an approximation to Carl Greeff's model with extensions (strain rate dependent model parameters).
        DeltaGdot is the time derivative of the difference in Gibbs free energy assumed to be constant in this approximation.
        Refs.: C. W. Greeff, J. Dynamic Behavior Mater. (2016) 2:452, doi:10.1007/s40870-016-0080-4;
               A. E. Mattsson Wills, LANL Tech. Rep. 2022, LA-UR-22-32182, doi:10.2172/1900445.
-       Dimensions of the model parameters: [B]=[DeltaG], [W] 1/micro-sec.'''
+       Dimensions of the model parameters: [B]=[DeltaG], [W] 1/micro-sec, [gammaW]=[gammaB]=1/[Prate]
+       and the latter control the change of W and B with strain rate (Prate).'''
+    W*=(1+gammaW*abs(Prate))
+    B*=(1+gammaB*abs(Prate))
     out = 1
     if DeltaG>0:
         out = np.exp(-W*B*(np.exp((DeltaG/B)**2) - 1)/(2*DeltaGdot))
+    return out
+
+def lambdaE_Fermi(DeltaG,W,B,Prate=0,gammaW=0,gammaB=0):
+    '''implementation of a model based on the Fermi-Dirac distribution (Ann E. Mattsson Wills, unpublished),
+       with extensions (strain rate dependent model parameters). It takes the following model parameters:
+       W ... nucleation energy barrier in the quasi-static regime
+       B ... controls the width of the phase transition
+       gammaW, gammaB ... if greater 0, these parameters control the increase of W and B with volumetric strain rate
+       (or normalized pressure rate), [Prate]=micro-sec^{-1}.
+       Dimensions of the model parameters: [W]=[B]=[DeltaG], [gammaW]=[gammaB]=1/[Prate].'''
+    W*=(1+gammaW*abs(Prate))
+    B*=(1+gammaB*abs(Prate))
+    if Prate<0:
+        out = 1/(np.exp((-DeltaG-W)/B) + 1)
+    else:
+        out = 1/(np.exp((DeltaG-W)/B) + 1)
     return out

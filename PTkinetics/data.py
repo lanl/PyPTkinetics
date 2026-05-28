@@ -46,5 +46,10 @@ grainthickness = {'Fe':1e-8, 'Sn':1e-8} ## average grain boundary thickness delt
 
 
 # TODO: generalize so that we have two sets of B,W for forward and backward trafo (could accept tuples in volfrac code)
+fermiB = {'Fe':5e2,'Sn':5e2} # B=B0*W/4; erg->joule 1e-7
+fermigammaB = {'Fe':0.2,'Sn':0.2}
+fermiW = {'Fe':5e3,'Sn':5e3}
+fermigammaW = {'Fe':0.2,'Sn':0.2}
+
 greeffB = {'Fe':5e2,'Sn':5e2}
 greeffW = {'Fe':5e-2,'Sn':5e-2}
