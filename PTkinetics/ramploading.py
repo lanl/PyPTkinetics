@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Feb. 9, 2026
+last modified: June 24, 2026
 @author: Daniel N. Blaschke
 
 This script applies the phase transformation kinetics models implemented in this package
@@ -146,11 +146,14 @@ if __name__ == '__main__':
     if opts.include_inverse:
         figtitle = figtitle_inv
         xmin = 0.1
-    elif opts.model in ['greef','fermi']:
+    elif opts.model in ['greeff','fermi']:
         xmin = 0.1
     else:
         xmin = round(Ptransition-0.5)
     if opts.model=='greeff':
+        figtitle += ", Greeff"
+        if opts.gammaB>0 or opts.gammaW>0:
+            figtitle +="+"
         @np.vectorize
         def lambdaE(P,Pdot=0):
             '''volume fraction from Greeff's model'''
@@ -161,12 +164,14 @@ if __name__ == '__main__':
             DeltaGdot = DeltaGPprime(P,Ttarget)*abs(Pdot)*1e9
             return 1-lambdaE_Greeff(DeltaG,DeltaGdot,W=opts.W,B=opts.B,Prate=Pdot/Ptransition,gammaW=opts.gammaW,gammaB=opts.gammaB)
     elif opts.model=='fermi':
+        figtitle += ", Fermi"
         @np.vectorize
         def lambdaE(P,Pdot=0):
             '''volume fraction from Mattsson's model using a Fermi-Dirac distribution'''
             DeltaG = DeltaGibbs(P,Ttarget)
             return 1 - lambdaE_Fermi(DeltaG,W=opts.W,B=opts.B,Prate=Pdot/Ptransition,gammaW=opts.gammaW,gammaB=opts.gammaB)
     else:
+        figtitle += ", micro"
         def lambdaE(t,Pdot):
             '''volume fraction from hom. nucleation and nucl. on dislocations'''
             return lambdaE_hd(t=t, Pdot=Pdot, cpref=cpref, Ndotpref=Ndotpref, epshom=epshom,rhob2=rhob2,alpha_dis=alpha_dis,cmax=opts.cmax,Ttarget=Ttarget,
@@ -186,7 +191,9 @@ if __name__ == '__main__':
         '''volume fraction from nucleation on grain boundaries, edges, and corners'''
         return lambdaE_grain(t=t, Pdot=Pdot,delta=delta,D=D,cpref=cpref,Ndotpref=Ndotpref,epshom=epshom,f2g=f2g,f1g=f1g,f0g=f0g,s2=s2,s1=s1,s0=s0,cmax=opts.cmax,Ttarget=Ttarget)
 
-    if opts.Npdot==4:
+    if opts.Npdot==3:
+        pdotvals = [1e-3,1,10]
+    elif opts.Npdot==4:
         pdotvals = [1,10,100,1000]
     elif opts.Npdot==6:
         pdotvals = [1e-6,5e-6,1e-5,5e-5,1e-4,5e-4]
@@ -308,7 +315,8 @@ if __name__ == '__main__':
     # if np.max(pdotvals) <= 1 or include_inverse:
     xlimits = None
     if onsetpressure is not None:
-        plot_Vfrac_P_Pdot(res,pressure,pdotvals,figtitle=figtitle,ylabel=ylabel,extendednamestring=extendednamestring,figsize=figsize,xlimits=xlimits,every=every,showfig=opts.showfigs)
+        plot_Vfrac_P_Pdot(res,pressure,pdotvals,figtitle=figtitle,ylabel=ylabel,extendednamestring=extendednamestring,\
+                          figsize=figsize,xlimits=xlimits,every=every,showfig=opts.showfigs,Ptrans=Ptransition)
         
     # relaxation time:
     skiptau = 5e6
