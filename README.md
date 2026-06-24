@@ -3,7 +3,10 @@
 O# (O4940)</br>
 doi: [10.11578/dc.20250822.5](https://doi.org/10.11578/dc.20250822.5)</br>
 
-This basic research code computes the time-dependent phase transition between two solid crystalline phases under dynamic conditions using a microstructure-aware model described in [Int. J. Plast. 196 (2020) 104579](https://doi.org/10.1016/j.ijplas.2025.104579) ([arxiv.org/abs/2504.00250](https://arxiv.org/abs/2504.00250)) as well as effective phenomenological models which can capture the main features of the microscopic model. Analytic equations of state are included for metals such as alpha / epsilon iron and beta / gamma tin. Results, such a volume fraction of the new phase as a function of pressure, are visualized using matplotlib.
+This basic research code computes the time-dependent phase transition between two solid crystalline phases under dynamic conditions using a microstructure-aware model described in [Int. J. Plast. 196 (2020) 104579](https://doi.org/10.1016/j.ijplas.2025.104579) ([arxiv.org/abs/2504.00250](https://arxiv.org/abs/2504.00250)) 
+as well as effective phenomenological models which can capture the main features of the microscopic model as presented in [arxiv.org/abs/2605.30495](https://arxiv.org/abs/2605.30495).
+Analytic equations of state are included for metals such as alpha / epsilon iron and beta / gamma tin.
+Results, such a volume fraction of the new phase as a function of pressure, are visualized using matplotlib.
  
  © 2025. Triad National Security, LLC. All rights reserved.
 
