@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Feb. 4, 2026
+last modified: June 23, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to generate various figures
@@ -44,7 +44,7 @@ colors = prop_cycle.by_key()['color']
 import pandas as pd
 
 def plot_Vfrac_P_Pdot(Vf,P,pdotvals,figtitle,ylabel,extendednamestring="",figsize=(6.5,4),xlimits=None,every=1,\
-                      legendopts={'loc':'upper left','bbox_to_anchor':(1.01,1), 'handlelength':1.2}, showfig=False):
+                      legendopts={'loc':'upper left','bbox_to_anchor':(1.01,1), 'handlelength':1.2}, showfig=False, Ptrans=None):
     '''plot the volume fraction of the 2nd phase as a function of pressure for various pressure rates'''
     ramp = pd.DataFrame(Vf,P).iloc[:,::every]
     pdotvals = np.asarray(pdotvals[::every])
@@ -97,6 +97,8 @@ def plot_Vfrac_P_Pdot(Vf,P,pdotvals,figtitle,ylabel,extendednamestring="",figsiz
         rampfig=ramp.plot(title=figtitle,xlim=xlimits,ylabel=ylabel,figsize=figsize,fontsize=fntsize,style=lnstyle,color=col,ylim=(-0.05,1.05))
     else:
         rampfig=ramp.plot(title=figtitle,xlim=xlimits,ylabel=ylabel,figsize=figsize,fontsize=fntsize,ylim=(-0.05,1.05))
+    if Ptrans is not None:
+        plt.axvline(x=Ptrans, color="gray", linestyle=":")
     rampfig.legend(**legendopts,fontsize=fntsize)
     rampfig.xaxis.set_minor_locator(AutoMinorLocator())
     rampfig.yaxis.set_minor_locator(AutoMinorLocator())
