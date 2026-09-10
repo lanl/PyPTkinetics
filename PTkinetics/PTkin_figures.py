@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
 last modified: June 23, 2026
@@ -35,7 +34,7 @@ if shutil.which('latex') and 'ipykernel' not in sys.modules:
     })
 ##################
 fntsize=10
-plt.rc('font',**{'family':'serif','size':'10'})
+plt.rc('font',family='serif', size='10')
 plt.rcParams['font.serif'].insert(0,'Liberation Serif')
 plt.rcParams['font.sans-serif'].insert(0,'Liberation Sans')
 from matplotlib.ticker import AutoMinorLocator

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
 last modified: Feb. 6, 2026
@@ -32,7 +31,7 @@ kappa = {'Fe':1e3,'Sn':1e3} # m^3 / Js
 beta = {'Fe':1e-10, 'Sn':1e-10} # J/m
 Ptransition = {'Fe':13, 'Sn':9.4} # GPa
 DeltaP = {'Fe':10, 'Sn':10} # GPa
-#
+
 gammaAM = {'Fe':50, 'Sn':50} # mJ/m^2 TODO: replace this copper value with iron/tin values!!!
 # TODO: for grain sites we need interfacial energy between 2 equal grains gammaAA for k=gammaAA/(2*gammaAM)!!
 gammaAA = {key:1.4*item for key, item in gammaAM.items()} # mJ/m^2 TODO: need the correct (average) number, this is just a place holder (inspired by Clemm & Fisher's 1955 choice)
@@ -40,7 +39,7 @@ ct = {key:np.sqrt(item/density[key]) for key, item in shear.items()}
 # numbers for nucleation rate on dislocations:
 rhodis = {'Fe':1e12, 'Sn':1e12} # dislocation density in 1/m^2
 burgers = {'Fe':a_lat['Fe']*np.sqrt(3)/2, 'Sn':c_lat['Sn']} ## burgers vector length (for one typical slip system in case of Sn, perhaps take an average over different slip systems here?)
-#
+
 graindiameter = {'Fe':1e-2, 'Sn':1e-2} ## average grain diameter D in cm, number suggested in Cahn 1956
 grainthickness = {'Fe':1e-8, 'Sn':1e-8} ## average grain boundary thickness delta  in cm, number suggested in Cahn 1956
 

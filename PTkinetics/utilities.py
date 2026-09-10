@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed May  8 12:32:12 2024
-last modified: Feb. 10, 2026
+last modified: Sept. 10, 2026
 @author: dblaschke
 
 This submodule provides various utility functions such as write/read calculation results and loading 3rd party modules if available.
@@ -172,13 +171,13 @@ def compare_results(f1,f2,verbose=False,rtol=1e-05, atol=1e-08):
     elif isinstance(f1, tuple):
         f1tuple = f1
     else:
-        raise ValueError("f1 must be a string (filename) or a tuple (output of readresults())")
+        raise TypeError("f1 must be a string (filename) or a tuple (output of readresults())")
     if isinstance(f2, str):
         f2tuple = readresults(f2)
     elif isinstance(f2, tuple):
         f2tuple = f2
     else:
-        raise ValueError("f2 must be a string (filename) or a tuple (output of readresults())")
+        raise TypeError("f2 must be a string (filename) or a tuple (output of readresults())")
     keys = ("pdotvals", "pressure", "ramppressure", "timeP", "res", "resplus", "resmin", "tau", "tauplus", "taumin")
     for i,x in enumerate(keys):
         f1a = f1tuple[i]
