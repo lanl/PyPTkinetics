@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Apr. 13, 2026
+last modified: Sept. 10, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to calculate the volume fraction of the second phase
@@ -127,5 +126,5 @@ def lambdaE_grain(t,Pdot,delta,D,rpref,Ndotpref,epshom,f2g,f1g,f0g,s2,s1,s0,Ttar
     if isinstance(t,float):
         out = lmbdE(t)
     else:
-        raise ValueError("arrays are not supported by this fct.")
+        raise TypeError("arrays are not supported by this fct.")
     return out
