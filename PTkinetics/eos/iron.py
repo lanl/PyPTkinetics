@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: July 18, 2024
+last modified: Sept. 10, 2026
 @author: Daniel N. Blaschke
 
 EOS for alpha and epsilon iron according to Dean's notes and Boettger & Wallace' paper; BUT everything (except for very few model parameters) is in SI units
@@ -20,7 +20,6 @@ Vstar = np.array([7.0047,6.5984]) # cm^3/mol
 V300 = np.array([7.093,6.73]) # cm^3/mol;
 Bstar = 1e9*np.array([176.64,181.5]) # Pa
 B1star = np.array([4.7041,5.74])
-PH300 = 1e9*np.array([2.1,3.3]) # Pa
 Phistar = np.array([0,5533]) # J/mol
 Theta0300 = np.array([301,261]) # K
 Theta2300 = np.array([420,364]) # K
