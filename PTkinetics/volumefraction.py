@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Created on Fri Jun 16 12:57:46 2023
-last modified: Sept. 10, 2026
+last modified: Sept. 11, 2026
 @author: Daniel N. Blaschke
 
 This submodule provides functions to calculate the volume fraction of the second phase
@@ -205,8 +205,8 @@ def lambdaE_Greeff(DeltaG,DeltaGdot,W,B,Prate=0,gammaW=0,gammaB=0):
               A. E. Mattsson Wills, LANL Tech. Rep. 2022, LA-UR-22-32182, doi:10.2172/1900445.
        Dimensions of the model parameters: [B]=[DeltaG], [W] 1/micro-sec, [gammaW]=[gammaB]=1/[Prate]
        and the latter control the change of W and B with strain rate (Prate).'''
-    W*=(1+gammaW*abs(Prate))
-    B*=(1+gammaB*abs(Prate))
+    W*=(1+gammaW*abs(Prate)) # = nu_G in https://arxiv.org/abs/2605.30495
+    B*=(1+gammaB*abs(Prate)) # = C_2 in https://arxiv.org/abs/2605.30495
     out = 1
     if DeltaG>0:
         out = np.exp(-W*B*(np.exp((DeltaG/B)**2) - 1)/(2*DeltaGdot))
@@ -219,6 +219,7 @@ def lambdaE_Fermi(DeltaG,W,B,Prate=0,gammaW=0,gammaB=0):
        B ... controls the width of the phase transition
        gammaW, gammaB ... if greater 0, these parameters control the increase of W and B with volumetric strain rate
        (or normalized pressure rate), [Prate]=micro-sec^{-1}.
+       Ref.: A.E. Mattsson Wills, D.N. Blaschke, M.B. Prime, D.R. Jones, S. Fensin, A. Hunter, arxiv.org/abs/2605.30495
        Dimensions of the model parameters: [W]=[B]=[DeltaG], [gammaW]=[gammaB]=1/[Prate].'''
     W*=(1+gammaW*abs(Prate))
     B*=(1+gammaB*abs(Prate))
